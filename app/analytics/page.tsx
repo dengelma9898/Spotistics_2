@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
     if (session?.accessToken) {
       loadTracks()
     }
-  }, [session, timeRange])
+  }, [session?.accessToken, timeRange])
 
   const loadTracks = async () => {
     try {

@@ -23,7 +23,7 @@ import { Header } from '@/components/Header'
 import { StatCard } from '@/components/StatCard'
 import { TrackPlayer } from '@/components/TrackPlayer'
 import { ArtistCard } from '@/components/ArtistCard'
-import { AudioFeaturesChart } from '@/components/AudioFeaturesChart'
+// AudioFeaturesChart entfernt - API deprecated
 import { ListeningActivity } from '@/components/ListeningActivity'
 import { DeviceSelector } from '@/components/DeviceSelector'
 import { RankingCard } from '@/components/RankingCard'
@@ -37,8 +37,7 @@ import {
   SpotifyTopItem, 
   SpotifyArtist, 
   SpotifyTrack,
-  RecentlyPlayedResponse,
-  AudioFeatures
+  RecentlyPlayedResponse
 } from '@/types/spotify'
 
 export default function DashboardPage() {
@@ -59,36 +58,36 @@ export default function DashboardPage() {
   const [topTracks, setTopTracks] = useState<SpotifyTrack[]>([])
   const [topArtists, setTopArtists] = useState<SpotifyArtist[]>([])
   const [recentTracks, setRecentTracks] = useState<RecentlyPlayedResponse | null>(null)
-  const [audioFeatures, setAudioFeatures] = useState<AudioFeatures[]>([])
   const [followedArtists, setFollowedArtists] = useState<SpotifyArtist[]>([])
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')
     }
-  }, [status, router])
+  }, [status])
 
   useEffect(() => {
     if (status === 'authenticated' && session?.accessToken) {
       initializeSpotify()
     }
-  }, [status, session])
+  }, [status, session?.accessToken])
 
   useEffect(() => {
-    if (spotifyApi && isPremium) {
+    if (spotifyApi) {
       loadSpotifyData()
     }
-  }, [spotifyApi, timeRange, isPremium])
+  }, [spotifyApi, timeRange])
 
   // Session Refresh Event Listener
   useEffect(() => {
     const handleTokenRefresh = async () => {
       console.log('Token refresh angefordert, aktualisiere Session...')
-      await update()
+      // Entferne das update() call das den Loop verursacht
+      // await update()
+      
+      // Stattdessen reload nach kurzer Verzögerung
       setTimeout(() => {
-        if (spotifyApi) {
-          loadSpotifyData()
-        }
+        window.location.reload()
       }, 1000)
     }
 
@@ -96,7 +95,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener('spotify-token-refresh', handleTokenRefresh)
     }
-  }, [update, spotifyApi])
+  }, [])
 
   const initializeSpotify = async () => {
     if (!session?.accessToken) {
@@ -159,18 +158,7 @@ export default function DashboardPage() {
       setRecentTracks(recentTracksData)
       setFollowedArtists(followedArtistsData.artists.items)
 
-      // Audio Features für Top Tracks laden
-      if (topTracksData.items.length > 0) {
-        const trackIds = (topTracksData.items as SpotifyTrack[])
-          .slice(0, 10)
-          .map(track => track.id)
-          .filter(id => id && id !== 'undefined')
-        
-        if (trackIds.length > 0) {
-          const audioFeaturesData = await spotifyApi.getAudioFeatures(trackIds)
-          setAudioFeatures(audioFeaturesData.audio_features.filter(f => f !== null))
-        }
-      }
+      // Audio Features API ist deprecated - entfernt gemäß Roadmap
     } catch (error: any) {
       console.error('Fehler beim Laden der Spotify-Daten:', error)
       
@@ -449,24 +437,7 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Audio Features */}
-            {audioFeatures.length > 0 && (
-              <section className="mb-12">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-2xl backdrop-blur-sm">
-                    <BarChart3 className="w-6 h-6 text-green-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Dein Sound-Profil 📊</h2>
-                    <p className="text-gray-400">So klingt dein Musikgeschmack!</p>
-                  </div>
-                </div>
-                
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8">
-                  <AudioFeaturesChart audioFeatures={audioFeatures} />
-                </div>
-              </section>
-            )}
+            {/* Audio Features entfernt - API deprecated */}
 
             {/* Recent Activity */}
             {recentTracks && (

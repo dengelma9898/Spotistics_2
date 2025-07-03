@@ -279,15 +279,7 @@ export class SpotifyApi {
     }
   }
 
-  // Genre Seeds für Empfehlungen
-  async getAvailableGenreSeeds() {
-    try {
-      return await this.request('/recommendations/available-genre-seeds')
-    } catch (error: any) {
-      console.warn('Genre Seeds konnten nicht geladen werden:', error.message)
-      return { genres: [] }
-    }
-  }
+  // Genre Seeds API deprecated - entfernt
 }
 
 export async function getSpotifyApi(): Promise<SpotifyApi | null> {
