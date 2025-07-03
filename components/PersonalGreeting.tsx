@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { SpotifyUser } from '@/types/spotify'
 import { TextGenerateEffect } from './ui/text-generate-effect'
-import { BackgroundGradient } from './ui/background-gradient'
 import { Spotlight } from './ui/spotlight'
 
 interface PersonalGreetingProps {
@@ -59,32 +58,31 @@ export function PersonalGreeting({ user, isPremium }: PersonalGreetingProps) {
   const firstName = user?.display_name?.split(' ')[0] || 'Music Lover'
 
   return (
-    <BackgroundGradient 
-      className="mb-8 p-8 rounded-3xl bg-black/[0.96] backdrop-blur-xl border border-white/10"
-      containerClassName="mb-8"
-    >
-      <div className="relative overflow-hidden rounded-3xl">
-        {/* Spotlight Effect */}
-        <Spotlight 
-          className="-top-40 left-0 md:-top-20 md:left-60"
-          fill="white"
-        />
-        
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 left-8 text-6xl">🎵</div>
-          <div className="absolute top-12 right-12 text-4xl">🎧</div>
-          <div className="absolute bottom-8 left-16 text-3xl">🎶</div>
-          <div className="absolute bottom-4 right-8 text-5xl">✨</div>
-        </div>
+    <div className="mb-8 relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 hover:bg-white/10 transition-all duration-300 group overflow-hidden">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent opacity-50" />
+      
+      {/* Spotlight Effect */}
+      <Spotlight 
+        className="-top-40 left-0 md:-top-20 md:left-60"
+        fill="white"
+      />
+      
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-4 left-8 text-6xl">🎵</div>
+        <div className="absolute top-12 right-12 text-4xl">🎧</div>
+        <div className="absolute bottom-8 left-16 text-3xl">🎶</div>
+        <div className="absolute bottom-4 right-8 text-5xl">✨</div>
+      </div>
 
-        <div className="relative z-10">
+      <div className="relative z-10">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-3xl animate-bounce">{emoji}</span>
           <div className="flex-1">
             <TextGenerateEffect 
               words={`${greeting} ${firstName}!`}
-              className="text-3xl font-bold text-white"
+              className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors"
               duration={0.8}
               filter={true}
             />
@@ -96,11 +94,11 @@ export function PersonalGreeting({ user, isPremium }: PersonalGreetingProps) {
           )}
         </div>
 
-        <p className="text-lg text-gray-300 mb-2">
+        <p className="text-lg text-gray-300 mb-2 group-hover:text-white transition-colors">
           {getTimeBasedMessage()}
         </p>
 
-        <div className="flex items-center gap-4 text-sm text-gray-400">
+        <div className="flex items-center gap-4 text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             <span>Deine persönlichen Spotify-Stats sind geladen</span>
@@ -122,16 +120,20 @@ export function PersonalGreeting({ user, isPremium }: PersonalGreetingProps) {
         </div>
 
         {/* Fun Facts */}
-        <div className="mt-4 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
-          <h3 className="text-sm font-semibold text-blue-400 mb-2">💡 Wusstest du?</h3>
-          <p className="text-sm text-gray-300">
+        <div className="mt-4 p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 group-hover:bg-white/10 transition-all duration-300">
+          <h3 className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-colors mb-2">💡 Wusstest du?</h3>
+          <p className="text-sm text-gray-300 group-hover:text-white transition-colors">
             Diese Stats basieren auf deinen Hörgewohnheiten der letzten Monate. Die "Popularität" zeigt, 
             wie mainstream deine Tracks/Artists sind (0-100). Je niedriger, desto underground! 
             {isPremium ? " Als Premium-User kannst du auch direkt hier abspielen! 🎵" : " Upgrade zu Premium für noch mehr Features! ✨"}
           </p>
         </div>
       </div>
+
+      {/* Subtle Glow Effect */}
+      <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-green-500/10" />
       </div>
-    </BackgroundGradient>
+    </div>
   )
 } 

@@ -23,6 +23,8 @@ export interface SpotifyAlbum {
   name: string
   images: SpotifyImage[]
   release_date: string
+  album_type: string
+  total_tracks: number
   artists: SpotifyArtist[]
   external_urls: {
     spotify: string
@@ -42,6 +44,7 @@ export interface SpotifyTrack {
     spotify: string
   }
   explicit: boolean
+  track_number: number
 }
 
 export interface SpotifyPlaylistTrack {
@@ -59,19 +62,48 @@ export interface SpotifyTopItem {
   previous: string | null
 }
 
+// Updated according to Spotify Web API Documentation
+// https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile
 export interface SpotifyUser {
-  id: string
-  display_name: string
-  email: string
-  images: SpotifyImage[]
-  followers: {
-    total: number
+  /** The country of the user, as set in the user's account profile. An ISO 3166-1 alpha-2 country code. */
+  country?: string
+  /** The name displayed on the user's profile. null if not available. */
+  display_name?: string | null
+  /** The user's email address, as entered by the user when creating their account. 
+   * Important! This email address is unverified; there is no proof that it actually belongs to the user. */
+  email?: string
+  /** The user's explicit content settings. */
+  explicit_content?: {
+    /** When true, indicates that explicit content should not be played. */
+    filter_enabled: boolean
+    /** When true, indicates that the explicit content setting is locked and can't be changed by the user. */
+    filter_locked: boolean
   }
-  country: string
-  product: string // Premium, Free, etc.
-  external_urls: {
+  /** Known external URLs for this user. */
+  external_urls?: {
+    /** The Spotify URL for the object. */
     spotify: string
   }
+  /** Information about the followers of the user. */
+  followers?: {
+    /** This will always be set to null, as the Web API does not support it at the moment. */
+    href: string | null
+    /** The total number of followers. */
+    total: number
+  }
+  /** A link to the Web API endpoint for this user. */
+  href?: string
+  /** The Spotify user ID for the user. */
+  id: string
+  /** The user's profile image. */
+  images?: SpotifyImage[]
+  /** The user's Spotify subscription level: "premium", "free", etc. 
+   * (The subscription level "open" can be considered the same as "free".) */
+  product?: string
+  /** The object type: "user" */
+  type?: string
+  /** The Spotify URI for the user. */
+  uri?: string
 }
 
 export interface SpotifyPlaylist {
