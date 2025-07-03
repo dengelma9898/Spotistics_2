@@ -47,6 +47,11 @@ module.exports = {
         'card': '20px',
         'grid': '16px',
       },
+      perspective: {
+        '500': '500px',
+        '1000': '1000px',
+        '1500': '1500px',
+      },
       animation: {
         'hover': 'hover 0.2s ease-in-out',
         'active': 'active 0.2s ease-in-out',
