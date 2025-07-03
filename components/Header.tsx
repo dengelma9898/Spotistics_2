@@ -4,7 +4,7 @@ import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Music, BarChart3, Home } from 'lucide-react'
+import { LogOut, Music, BarChart3, Home, Users } from 'lucide-react'
 
 interface HeaderProps {
   user?: any
@@ -16,7 +16,8 @@ export function Header({ user }: HeaderProps) {
 
   const navigationItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/analytics', label: 'Analytics', icon: BarChart3 }
+    { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { href: '/comparisons', label: 'Vergleiche', icon: Users }
   ]
 
   const handleSignOut = () => {
