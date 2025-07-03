@@ -2,7 +2,9 @@
 
 import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
-import { LogOut, Music, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { LogOut, Music, ChevronDown, BarChart3, Home } from 'lucide-react'
 import { useState } from 'react'
 import { getTimeRangeLabel } from '@/lib/spotify'
 
@@ -14,12 +16,18 @@ interface HeaderProps {
 
 export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const [showDropdown, setShowDropdown] = useState(false)
 
   const timeRanges = [
     { value: 'short_term', label: 'Letzte 4 Wochen' },
     { value: 'medium_term', label: 'Letzte 6 Monate' },
     { value: 'long_term', label: 'Gesamte Zeit' }
+  ]
+
+  const navigationItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/analytics', label: 'Analytics', icon: BarChart3 }
   ]
 
   const handleSignOut = () => {
@@ -36,6 +44,29 @@ export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
               Spotistics
             </h1>
           </div>
+          
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navigationItems.map((item) => {
+              const IconComponent = item.icon
+              const isActive = pathname === item.href
+              
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-colors duration-200 ${
+                    isActive 
+                      ? 'bg-accent/20 text-accent border border-accent/30' 
+                      : 'text-textSecondary hover:text-textPrimary hover:bg-background'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
           
           {user && (
             <div className="hidden sm:block text-textSecondary">

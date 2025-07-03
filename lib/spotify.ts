@@ -5,8 +5,7 @@ import {
   SpotifyTrack, 
   SpotifyArtist, 
   RecentlyPlayedResponse,
-  SpotifyPlaylist,
-  AudioFeatures
+  SpotifyPlaylist
 } from '@/types/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
