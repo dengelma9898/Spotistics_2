@@ -5,20 +5,44 @@ import {
   SpotifyTrack, 
   SpotifyArtist, 
   RecentlyPlayedResponse,
-  SpotifyPlaylist,
-  AudioFeatures
+  SpotifyPlaylist
 } from '@/types/spotify'
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
 
 export class SpotifyApi {
   private accessToken: string
+  private requestCount: number = 0
+  private lastRequestTime: number = 0
+  private cache: Map<string, { data: any; timestamp: number }> = new Map()
+  private readonly CACHE_DURATION = 30 * 1000 // 30 Sekunden Cache
 
   constructor(accessToken: string) {
     this.accessToken = accessToken
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Cache check für GET requests
+    const cacheKey = `${endpoint}_${JSON.stringify(options)}`
+    const isGetRequest = !options.method || options.method === 'GET'
+    
+    if (isGetRequest) {
+      const cached = this.cache.get(cacheKey)
+      if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+        console.log(`Cache hit für: ${endpoint}`)
+        return cached.data
+      }
+    }
+
+    // Rate limiting: Warte mindestens 100ms zwischen Requests
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    if (timeSinceLastRequest < 100) {
+      await new Promise(resolve => setTimeout(resolve, 100 - timeSinceLastRequest))
+    }
+    this.lastRequestTime = Date.now()
+    this.requestCount++
+
     try {
       const response = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
         headers: {
@@ -58,8 +82,33 @@ export class SpotifyApi {
             }
             throw new Error('Ressource nicht gefunden')
           } else if (response.status === 429) {
-            const retryAfter = response.headers.get('Retry-After')
-            throw new Error(`Zu viele Anfragen. Versuchen Sie es in ${retryAfter || '60'} Sekunden erneut.`)
+            const retryAfter = parseInt(response.headers.get('Retry-After') || '1')
+            console.warn(`Rate limited, waiting ${retryAfter} seconds before retry...`)
+            
+            // Exponential backoff mit Maximum
+            const waitTime = Math.min(retryAfter * 1000, 5000) // Max 5 Sekunden
+            await new Promise(resolve => setTimeout(resolve, waitTime))
+            
+            // Cache leeren bei Rate Limiting
+            this.cache.clear()
+            
+            // Retry the request direkt ohne Rate Limiting
+            console.log('Retry request without rate limiting...')
+            
+            const response2 = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
+              headers: {
+                'Authorization': `Bearer ${this.accessToken}`,
+                'Content-Type': 'application/json',
+                ...options.headers,
+              },
+              ...options,
+            })
+            
+            if (response2.ok) {
+              return await response2.json()
+            } else {
+              throw new Error(`Retry failed: ${response2.status}`)
+            }
           }
           
           errorMessage = errorData?.error?.message || errorMessage
@@ -88,7 +137,14 @@ export class SpotifyApi {
         return {} as T
       }
 
-      return await response.json()
+      const data = await response.json()
+      
+      // Cache für GET requests speichern
+      if (isGetRequest) {
+        this.cache.set(cacheKey, { data, timestamp: Date.now() })
+      }
+      
+      return data
     } catch (error: any) {
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         throw new Error('Netzwerkfehler - prüfen Sie Ihre Internetverbindung')
@@ -280,15 +336,7 @@ export class SpotifyApi {
     }
   }
 
-  // Genre Seeds für Empfehlungen
-  async getAvailableGenreSeeds() {
-    try {
-      return await this.request('/recommendations/available-genre-seeds')
-    } catch (error: any) {
-      console.warn('Genre Seeds konnten nicht geladen werden:', error.message)
-      return { genres: [] }
-    }
-  }
+  // Genre Seeds API deprecated - entfernt
 }
 
 export async function getSpotifyApi(): Promise<SpotifyApi | null> {

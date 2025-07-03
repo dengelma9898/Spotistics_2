@@ -14,7 +14,7 @@ export default function HomePage() {
     } else if (status === 'unauthenticated') {
       router.push('/login')
     }
-  }, [status, router])
+  }, [status])
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
