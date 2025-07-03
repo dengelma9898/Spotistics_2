@@ -4,26 +4,15 @@ import { signOut, useSession } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Music, ChevronDown, BarChart3, Home } from 'lucide-react'
-import { useState } from 'react'
-import { getTimeRangeLabel } from '@/lib/spotify'
+import { LogOut, Music, BarChart3, Home } from 'lucide-react'
 
 interface HeaderProps {
   user?: any
-  timeRange: string
-  onTimeRangeChange: (timeRange: string) => void
 }
 
-export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
+export function Header({ user }: HeaderProps) {
   const { data: session } = useSession()
   const pathname = usePathname()
-  const [showDropdown, setShowDropdown] = useState(false)
-
-  const timeRanges = [
-    { value: 'short_term', label: 'Letzte 4 Wochen' },
-    { value: 'medium_term', label: 'Letzte 6 Monate' },
-    { value: 'long_term', label: 'Gesamte Zeit' }
-  ]
 
   const navigationItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -35,8 +24,8 @@ export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
   }
 
   return (
-    <header className="bg-cardBackground border-b border-textSecondary/10 p-4">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="bg-cardBackground border-b border-textSecondary/10 p-4 relative z-[10000] sticky top-0">
+      <div className="max-w-7xl mx-auto flex items-center justify-between relative z-50">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Music className="w-8 h-8 text-accent" />
@@ -46,7 +35,7 @@ export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
           </div>
           
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 relative z-50">
             {navigationItems.map((item) => {
               const IconComponent = item.icon
               const isActive = pathname === item.href
@@ -55,7 +44,7 @@ export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-colors duration-200 ${
+                  className={`relative z-50 flex items-center gap-2 px-3 py-2 rounded-button text-sm font-medium transition-colors duration-200 cursor-pointer pointer-events-auto ${
                     isActive 
                       ? 'bg-accent/20 text-accent border border-accent/30' 
                       : 'text-textSecondary hover:text-textPrimary hover:bg-background'
@@ -78,71 +67,36 @@ export function Header({ user, timeRange, onTimeRangeChange }: HeaderProps) {
           )}
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Zeitraum-Auswahl */}
-          <div className="relative">
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 bg-background px-4 py-2 rounded-button border border-textSecondary/20 hover:border-accent/50 transition-colors duration-200"
-            >
-              <span className="text-sm text-textPrimary">
-                {getTimeRangeLabel(timeRange)}
-              </span>
-              <ChevronDown className="w-4 h-4 text-textSecondary" />
-            </button>
-
-            {showDropdown && (
-              <div className="absolute top-full mt-2 right-0 bg-cardBackground border border-textSecondary/20 rounded-card shadow-card z-[11] min-w-[200px]">
-                {timeRanges.map((range) => (
-                  <button
-                    key={range.value}
-                    onClick={() => {
-                      onTimeRangeChange(range.value)
-                      setShowDropdown(false)
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-background transition-colors duration-200 first:rounded-t-card last:rounded-b-card ${
-                      timeRange === range.value ? 'text-accent' : 'text-textPrimary'
-                    }`}
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
+        <div className="flex items-center gap-4 relative z-50">
           {/* Benutzer Info */}
           {user && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative z-50">
               {user.images?.[0]?.url && (
-                <Image
-                  src={user.images[0].url}
-                  alt={user.display_name || 'User'}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
+                <button className="relative z-50 cursor-pointer pointer-events-auto" onClick={() => console.log('Profile clicked!')}>
+                  <Image
+                    src={user.images[0].url}
+                    alt={user.display_name || 'User'}
+                    width={32}
+                    height={32}
+                    className="rounded-full hover:ring-2 hover:ring-accent/50 transition-all duration-200"
+                  />
+                </button>
               )}
               
               <button
                 onClick={handleSignOut}
-                className="p-2 hover:bg-background rounded-button transition-colors duration-200"
+                className="relative z-50 flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-button transition-colors duration-200 border border-red-500/20 cursor-pointer pointer-events-auto"
                 title="Abmelden"
               >
-                <LogOut className="w-4 h-4 text-textSecondary" />
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Logout</span>
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Mobile Dropdown Overlay */}
-      {showDropdown && (
-        <div 
-          className="fixed inset-0 z-5 sm:hidden" 
-          onClick={() => setShowDropdown(false)}
-        />
-      )}
+
     </header>
   )
 } 

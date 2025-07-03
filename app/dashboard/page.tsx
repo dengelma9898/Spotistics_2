@@ -267,8 +267,6 @@ export default function DashboardPage() {
       
       <Header 
         user={user} 
-        timeRange={timeRange} 
-        onTimeRangeChange={(range) => setTimeRange(range as any)}
       />
       
       <main className="max-w-7xl mx-auto px-6 py-8 pb-32 relative z-10">

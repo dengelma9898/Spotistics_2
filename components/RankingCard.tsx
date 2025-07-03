@@ -179,7 +179,7 @@ export function RankingCard({
 
       {/* Tooltip */}
       {showContext && showTooltip && (
-        <div className="absolute top-16 right-4 w-96 p-5 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-[9999]">
+                      <div className="absolute top-16 right-4 w-96 p-5 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-[9999] max-h-96 overflow-y-auto">
           <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
             <Info className="w-4 h-4 text-blue-400" />
             {contextInfo.title}

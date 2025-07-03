@@ -6,7 +6,8 @@ import { ArrowLeft, Play, Pause, ExternalLink, Info, Music, Clock, Calendar, Use
 import { motion } from 'framer-motion'
 import { useSession } from 'next-auth/react'
 import { getSpotifyApi } from '@/lib/spotify'
-import { SpotifyTrack } from '@/types/spotify'
+import { SpotifyTrack, SpotifyUser } from '@/types/spotify'
+import { Header } from '@/components/Header'
 import { BackgroundGradient } from '@/components/ui/background-gradient'
 import { Spotlight } from '@/components/ui/spotlight'
 
@@ -15,6 +16,7 @@ export default function TrackDetailPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const [track, setTrack] = useState<SpotifyTrack | null>(null)
+  const [user, setUser] = useState<SpotifyUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
@@ -22,8 +24,10 @@ export default function TrackDetailPage() {
   const trackId = params.id as string
 
   useEffect(() => {
-    loadTrackDetails()
-  }, [trackId, session])
+    if (session?.accessToken && trackId) {
+      loadTrackDetails()
+    }
+  }, [trackId, session?.accessToken])
 
   const loadTrackDetails = async () => {
     if (!session?.accessToken || !trackId) return
@@ -35,8 +39,14 @@ export default function TrackDetailPage() {
       const spotifyApi = await getSpotifyApi()
       if (!spotifyApi) throw new Error('Spotify API nicht verfügbar')
       setDebugInfo(prev => [...prev, `🎵 Lade Track-Details für ID: ${trackId}`])
-      const trackData = await spotifyApi.getTrackDetails(trackId)
+      
+      const [trackData, userData] = await Promise.all([
+        spotifyApi.getTrackDetails(trackId),
+        spotifyApi.getCurrentUser()
+      ])
+      
       setTrack(trackData as SpotifyTrack)
+      setUser(userData)
       setDebugInfo(prev => [...prev, '✅ Track erfolgreich geladen'])
     } catch (error: any) {
       setError(error.message || 'Ein Fehler ist aufgetreten')
@@ -46,8 +56,10 @@ export default function TrackDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-3xl">
+    <div className="min-h-screen bg-background">
+      <Header user={user} />
+      <div className="flex flex-col items-center justify-center p-4 pt-8">
+        <div className="w-full max-w-3xl">
         <button onClick={() => router.back()} className="mb-6 flex items-center gap-2 text-accent hover:underline">
           <ArrowLeft className="w-5 h-5" /> Zurück
         </button>
@@ -109,6 +121,7 @@ export default function TrackDetailPage() {
             )}
           </BackgroundGradient>
         ) : null}
+        </div>
       </div>
     </div>
   )
