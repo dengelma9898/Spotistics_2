@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { getSpotifyApi } from '@/lib/spotify'
-import { SpotifyTrack, SpotifyArtist } from '@/types/spotify'
+import { SpotifyTrack, SpotifyArtist, SpotifyUser } from '@/types/spotify'
+import { Header } from '@/components/Header'
 import TrackMetadataDetails from '@/components/TrackMetadataDetails'
 import PopularityChart from '@/components/PopularityChart'
 import ReleaseDateTimeline from '@/components/ReleaseDateTimeline'
@@ -16,6 +17,7 @@ export default function AnalyticsPage() {
   const { data: session } = useSession()
   const [tracks, setTracks] = useState<SpotifyTrack[]>([])
   const [artists, setArtists] = useState<SpotifyArtist[]>([])
+  const [user, setUser] = useState<SpotifyUser | null>(null)
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
   const [timeRange, setTimeRange] = useState<string>('medium_term')
   const [loading, setLoading] = useState(true)
@@ -37,13 +39,15 @@ export default function AnalyticsPage() {
         throw new Error('Spotify API nicht verfügbar')
       }
 
-      const [tracksResponse, artistsResponse] = await Promise.all([
+      const [tracksResponse, artistsResponse, userResponse] = await Promise.all([
         api.getTopTracks(timeRange, 50),
-        api.getTopArtists(timeRange, 50)
+        api.getTopArtists(timeRange, 50),
+        api.getCurrentUser()
       ])
       
       setTracks(tracksResponse.items as SpotifyTrack[])
       setArtists(artistsResponse.items as SpotifyArtist[])
+      setUser(userResponse)
       
       // Setze ersten Track als Standard-Selection
       if (tracksResponse.items.length > 0 && !selectedTrack) {
@@ -76,6 +80,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      <Header user={user} />
       <BackgroundGradient className="min-h-screen">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
@@ -212,19 +217,19 @@ export default function AnalyticsPage() {
                     <button
                       key={track.id}
                       onClick={() => setSelectedTrack(track)}
-                      className={`p-3 rounded-lg text-left transition-all ${
+                      className={`p-4 rounded-xl text-left transition-all border-2 ${
                         selectedTrack?.id === track.id
-                          ? 'bg-white/20 border-white/30'
-                          : 'bg-white/10 hover:bg-white/15 border-white/10'
-                      } border`}
+                          ? 'bg-white/15 backdrop-blur-sm border-white/50 shadow-lg ring-2 ring-white/30'
+                          : 'bg-white/10 backdrop-blur-sm hover:bg-white/20 border-white/30 hover:border-white/50'
+                      }`}
                     >
-                      <p className="text-white font-medium text-sm truncate">{track.name}</p>
-                      <p className="text-gray-400 text-xs truncate">
+                      <p className="text-white font-semibold text-sm truncate mb-1">{track.name}</p>
+                      <p className="text-white/90 text-xs truncate mb-2">
                         {track.artists.map(a => a.name).join(', ')}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-gray-400 text-xs">{track.popularity} Pop.</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full" role="presentation"></div>
+                        <span className="text-white/95 text-xs font-medium">{track.popularity} Pop.</span>
                       </div>
                     </button>
                   ))}
