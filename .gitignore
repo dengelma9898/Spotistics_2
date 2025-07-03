@@ -1,0 +1,41 @@
+# Node.js / npm
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Logfiles
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+server.log
+
+# OS/Editor spezifisch
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test/Build/Coverage
+coverage/
+build/
+dist/
+
+# Umgebungsvariablen (SENSIBLE DATEN!)
+.env
+.env.*
+!.env.example
+
+# Sonstiges
+*.local
+
+# Ignore production secrets
+docker-secret*
+
+# Ignore lockfiles, falls gewünscht (optional)
+# package-lock.json
+yarn.lock
+pnpm-lock.yaml 
