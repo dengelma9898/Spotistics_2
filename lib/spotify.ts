@@ -336,6 +336,13 @@ export class SpotifyApi {
     }
   }
 
+  // Einfache Playback-Kontrolle nur für Analytics (einzelne Tracks)
+  async getCurrentPlayback(): Promise<any> {
+    return this.request<any>('/me/player')
+  }
+
+
+
   // Genre Seeds API deprecated - entfernt
 }
 

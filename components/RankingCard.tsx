@@ -11,6 +11,7 @@ interface RankingCardProps {
   type: 'track' | 'artist'
   onPlay?: (uri: string) => void
   onPause?: () => void
+
   isPlaying?: boolean
   currentTrack?: string
   showContext?: boolean
@@ -127,6 +128,8 @@ export function RankingCard({
     }
   }
 
+
+
   const imageUrl = type === 'track' 
     ? (item as SpotifyTrack).album.images?.[0]?.url 
     : (item as SpotifyArtist).images?.[0]?.url
@@ -154,6 +157,8 @@ export function RankingCard({
 
       {/* Action Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
+
+
         {/* Track Details Button (nur für Tracks) */}
         {type === 'track' && (
           <button

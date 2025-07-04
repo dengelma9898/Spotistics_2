@@ -28,7 +28,9 @@ import { ListeningActivity } from '@/components/ListeningActivity'
 import { DeviceSelector } from '@/components/DeviceSelector'
 import { RankingCard } from '@/components/RankingCard'
 import { PersonalGreeting } from '@/components/PersonalGreeting'
+
 import { Spotlight } from '@/components/ui/spotlight'
+import { useToast, ToastContainer } from '@/components/ui/toast'
 import { motion } from 'motion/react'
 
 import { SpotifyApi } from '@/lib/spotify'
@@ -43,6 +45,7 @@ import {
 export default function DashboardPage() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
+  const { toasts, removeToast, success, error: showError } = useToast()
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -192,14 +195,21 @@ export default function DashboardPage() {
   }
 
   const handleTrackPlay = async (uri: string) => {
-    if (!spotifyApi || !selectedDeviceId) return
+    if (!spotifyApi) return
+    
+    if (!selectedDeviceId) {
+      showError('Kein Gerät ausgewählt', 'Bitte wähle erst ein Spotify-Gerät aus, um Musik abspielen zu können.')
+      return
+    }
     
     try {
       await spotifyApi.playTrack(uri, selectedDeviceId)
       setIsPlaying(true)
       setCurrentTrack(uri)
-    } catch (error) {
+      success('Track wird abgespielt', 'Die Wiedergabe wurde gestartet')
+    } catch (error: any) {
       console.error('Fehler beim Abspielen:', error)
+      showError('Fehler beim Abspielen', error.message || 'Konnte Track nicht abspielen')
     }
   }
 
@@ -214,6 +224,8 @@ export default function DashboardPage() {
       console.error('Fehler beim Pausieren:', error)
     }
   }
+
+
 
   const getTimeRangeLabel = () => {
     switch (timeRange) {
@@ -254,6 +266,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
       {/* Aurora Background Effect */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_farthest-side_at_0_100%,#00ccb1,transparent),radial-gradient(circle_farthest-side_at_100%_0,#7b61ff,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)] animate-aurora bg-[length:400%_400%]" />
@@ -405,7 +419,7 @@ export default function DashboardPage() {
                     onPlay={handleTrackPlay}
                     onPause={handleTrackPause}
                     isPlaying={isPlaying}
-                                         currentTrack={currentTrack || undefined}
+                    currentTrack={currentTrack || undefined}
                   />
                 ))}
               </div>
@@ -435,7 +449,7 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Audio Features entfernt - API deprecated */}
+            {/* Analytics Focus - Advanced Player entfernt für besseren Fokus auf Statistiken */}
 
             {/* Recent Activity */}
             {recentTracks && (

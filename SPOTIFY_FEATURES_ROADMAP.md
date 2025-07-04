@@ -104,6 +104,29 @@ interface AlbumMetadata {
 
 ## ✅ Phase 2: Soziale Features & Vergleiche - ABGESCHLOSSEN
 
+## 🎯 **REFOKUSSIERUNG: Analytics-First Approach**
+
+### 📊 **Spotistics Core Mission: Musik-Analytics & Statistiken**
+
+**Primärer Fokus:** Detaillierte Analyse und Visualisierung des Spotify-Hörverhaltens
+**Sekundärer Fokus:** Einfache Playback-Kontrolle (nur Play/Stop einzelner Tracks)
+
+### ❌ **Entfernte Features (Player-Funktionalitäten)**
+- ❌ `AdvancedPlayer.tsx` - Komplexer Media Player (entfernt)
+- ❌ `QueueDisplay.tsx` - Warteschlangen-Management (entfernt)  
+- ❌ `PlayerVisualizer.tsx` - Audio-Visualisierung (entfernt)
+- ❌ Web Playback SDK Integration (entfernt)
+- ❌ Volume Control, Seek Bar, Repeat/Shuffle (entfernt)
+- ❌ Queue Management & Advanced Player Controls (entfernt)
+
+### ✅ **Behaltene Funktionalitäten**
+- ✅ Einfache Play/Stop Controls für einzelne Tracks
+- ✅ Device-Auswahl für grundlegende Playback-Kontrolle
+- ✅ Premium-Status Erkennung
+- ✅ Fokus auf Statistiken und Analytics
+
+## ✅ Phase 2: Soziale Features & Vergleiche - GEPLANT
+
 ### 🤝 Freunde & Social
 ```javascript
 // User Following
@@ -125,28 +148,6 @@ spotifyApi.areFollowingPlaylist(playlistId, [userId1, userId2])
 - Nischen vs. Mainstream Score
 - Temporal Listening Pattern
 - Cross-Genre Diversity Index
-
-## 🎧 Phase 3: Erweiterte Player-Features
-
-### 🎛️ Playback Control (Premium erforderlich)
-```javascript
-// Erweiterte Player-Kontrolle
-spotifyApi.play({ uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] })
-spotifyApi.pause()
-spotifyApi.skipToNext()
-spotifyApi.skipToPrevious()
-spotifyApi.seek(positionMs)
-spotifyApi.setVolume(50)
-spotifyApi.setShuffle(true)
-spotifyApi.setRepeat('track') // 'track', 'context', 'off'
-spotifyApi.transferMyPlayback(['deviceId'])
-```
-
-**Neue Komponenten:**
-- `AdvancedPlayer.tsx` - Vollständiger Player mit Visualisierung
-- `QueueManager.tsx` - Warteschlangen-Management
-- `CrossfadeControl.tsx` - Crossfade-Einstellungen
-- `VolumeVisualizer.tsx` - Lautstärke-Visualisierung
 
 ### 🎵 ❌ Smart Playlists (DEPRECATED)
 ```javascript
