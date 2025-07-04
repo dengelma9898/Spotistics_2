@@ -104,7 +104,28 @@ interface AlbumMetadata {
 
 ## ✅ Phase 2: Soziale Features & Vergleiche - ABGESCHLOSSEN
 
-## ✅ Phase 3: Erweiterte Player-Features - ABGESCHLOSSEN
+## 🎯 **REFOKUSSIERUNG: Analytics-First Approach**
+
+### 📊 **Spotistics Core Mission: Musik-Analytics & Statistiken**
+
+**Primärer Fokus:** Detaillierte Analyse und Visualisierung des Spotify-Hörverhaltens
+**Sekundärer Fokus:** Einfache Playback-Kontrolle (nur Play/Stop einzelner Tracks)
+
+### ❌ **Entfernte Features (Player-Funktionalitäten)**
+- ❌ `AdvancedPlayer.tsx` - Komplexer Media Player (entfernt)
+- ❌ `QueueDisplay.tsx` - Warteschlangen-Management (entfernt)  
+- ❌ `PlayerVisualizer.tsx` - Audio-Visualisierung (entfernt)
+- ❌ Web Playback SDK Integration (entfernt)
+- ❌ Volume Control, Seek Bar, Repeat/Shuffle (entfernt)
+- ❌ Queue Management & Advanced Player Controls (entfernt)
+
+### ✅ **Behaltene Funktionalitäten**
+- ✅ Einfache Play/Stop Controls für einzelne Tracks
+- ✅ Device-Auswahl für grundlegende Playback-Kontrolle
+- ✅ Premium-Status Erkennung
+- ✅ Fokus auf Statistiken und Analytics
+
+## ✅ Phase 2: Soziale Features & Vergleiche - GEPLANT
 
 ### 🤝 Freunde & Social
 ```javascript
@@ -127,37 +148,6 @@ spotifyApi.areFollowingPlaylist(playlistId, [userId1, userId2])
 - Nischen vs. Mainstream Score
 - Temporal Listening Pattern
 - Cross-Genre Diversity Index
-
-### 🎛️ Playback Control (Premium erforderlich) - IMPLEMENTIERT
-```javascript
-// Erweiterte Player-Kontrolle
-spotifyApi.play({ uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] })
-spotifyApi.pause()
-spotifyApi.skipToNext()
-spotifyApi.skipToPrevious()
-spotifyApi.seek(positionMs)
-spotifyApi.setVolume(50)
-spotifyApi.setShuffle(true)
-spotifyApi.setRepeat('track') // 'track', 'context', 'off'
-spotifyApi.transferMyPlayback(['deviceId'])
-```
-
-**✅ Implementierte Komponenten:**
-- ✅ `AdvancedPlayer.tsx` - Vollständiger Player mit Web Playback SDK
-- ✅ `QueueDisplay.tsx` - Warteschlangen-Anzeige und Management
-- ✅ `PlayerVisualizer.tsx` - Audio-Visualisierung mit Animationen
-- ⚠️ `CrossfadeControl.tsx` - Nicht verfügbar (API-Limitation)
-
-**🎯 Features implementiert:**
-- ✅ Spotify Web Playback SDK Integration
-- ✅ Volume Control mit Slider
-- ✅ Seek Bar für Positions-Kontrolle
-- ✅ Repeat/Shuffle Toggle Buttons
-- ✅ Queue Display mit aktuell spielendem Track
-- ✅ Skip Previous/Next Controls
-- ✅ Real-time Player State Updates
-- ✅ Premium-Status Validierung
-- ✅ Glasmorphism Design-Konsistenz
 
 ### 🎵 ❌ Smart Playlists (DEPRECATED)
 ```javascript

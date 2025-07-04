@@ -28,8 +28,7 @@ import { ListeningActivity } from '@/components/ListeningActivity'
 import { DeviceSelector } from '@/components/DeviceSelector'
 import { RankingCard } from '@/components/RankingCard'
 import { PersonalGreeting } from '@/components/PersonalGreeting'
-import { AdvancedPlayer } from '@/components/AdvancedPlayer'
-import { QueueDisplay } from '@/components/QueueDisplay'
+
 import { Spotlight } from '@/components/ui/spotlight'
 import { useToast, ToastContainer } from '@/components/ui/toast'
 import { motion } from 'motion/react'
@@ -226,22 +225,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleAddToQueue = async (uri: string) => {
-    if (!spotifyApi) return
-    
-    if (!selectedDeviceId) {
-      showError('Kein Gerät ausgewählt', 'Bitte wähle erst ein Spotify-Gerät aus, um Tracks zur Queue hinzuzufügen.')
-      return
-    }
-    
-    try {
-      await spotifyApi.addToQueue(uri, selectedDeviceId)
-      success('Track zur Queue hinzugefügt!', 'Der Song wird nach dem aktuellen Track gespielt')
-    } catch (error: any) {
-      console.error('Fehler beim Hinzufügen zur Queue:', error)
-      showError('Fehler beim Hinzufügen zur Queue', error.message || 'Unbekannter Fehler')
-    }
-  }
+
 
   const getTimeRangeLabel = () => {
     switch (timeRange) {
@@ -434,7 +418,6 @@ export default function DashboardPage() {
                     type="track"
                     onPlay={handleTrackPlay}
                     onPause={handleTrackPause}
-                    onAddToQueue={handleAddToQueue}
                     isPlaying={isPlaying}
                     currentTrack={currentTrack || undefined}
                   />
@@ -466,36 +449,7 @@ export default function DashboardPage() {
               </div>
             </section>
 
-            {/* Audio Features entfernt - API deprecated */}
-
-            {/* Advanced Player Section */}
-            <section className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-2xl backdrop-blur-sm">
-                  <PlayCircle className="w-6 h-6 text-green-400" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-white">Advanced Player 🎮</h2>
-                  <p className="text-gray-400">Vollständige Player-Kontrollen mit Web Playback SDK!</p>
-                  {/* Debug Info */}
-                  <div className="mt-2 text-xs text-gray-500">
-                    🎯 Selected Device: {selectedDeviceId ? selectedDeviceId.substring(0, 8) + '...' : 'Kein Gerät ausgewählt'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid lg:grid-cols-2 gap-6">
-                <AdvancedPlayer
-                  spotifyApi={spotifyApi}
-                  isPremium={isPremium}
-                  selectedDeviceId={selectedDeviceId}
-                />
-                <QueueDisplay
-                  spotifyApi={spotifyApi}
-                  isPremium={isPremium}
-                />
-              </div>
-            </section>
+            {/* Analytics Focus - Advanced Player entfernt für besseren Fokus auf Statistiken */}
 
             {/* Recent Activity */}
             {recentTracks && (

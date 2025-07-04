@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Play, Pause, Crown, Trophy, Award, Info, Clock, ExternalLink, Plus } from 'lucide-react'
+import { Play, Pause, Crown, Trophy, Award, Info, Clock, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { SpotifyTrack, SpotifyArtist } from '@/types/spotify'
 
@@ -11,7 +11,7 @@ interface RankingCardProps {
   type: 'track' | 'artist'
   onPlay?: (uri: string) => void
   onPause?: () => void
-  onAddToQueue?: (uri: string) => void
+
   isPlaying?: boolean
   currentTrack?: string
   showContext?: boolean
@@ -23,7 +23,6 @@ export function RankingCard({
   type, 
   onPlay, 
   onPause, 
-  onAddToQueue,
   isPlaying, 
   currentTrack,
   showContext = true 
@@ -129,12 +128,7 @@ export function RankingCard({
     }
   }
 
-  const handleAddToQueue = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (type === 'track' && onAddToQueue) {
-      onAddToQueue((item as SpotifyTrack).uri)
-    }
-  }
+
 
   const imageUrl = type === 'track' 
     ? (item as SpotifyTrack).album.images?.[0]?.url 
@@ -163,16 +157,7 @@ export function RankingCard({
 
       {/* Action Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
-        {/* Add to Queue Button (nur für Tracks) */}
-        {type === 'track' && onAddToQueue && (
-          <button
-            onClick={handleAddToQueue}
-            className="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-green-500/20 transition-all group/queue"
-            title="Zur Queue hinzufügen"
-          >
-            <Plus className="w-4 h-4 text-gray-400 group-hover/queue:text-green-400" />
-          </button>
-        )}
+
 
         {/* Track Details Button (nur für Tracks) */}
         {type === 'track' && (
