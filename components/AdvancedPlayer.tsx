@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { motion } from 'motion/react'
 import { 
   Play, 
   Pause, 
@@ -13,11 +14,19 @@ import {
   Monitor,
   Heart,
   MoreHorizontal,
-  Maximize2
+  Maximize2,
+  Smartphone
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
 import { SpotifyApi } from '@/lib/spotify'
 import { SpotifyTrack } from '@/types/spotify'
+
+// Global declarations for Spotify Web Playback SDK
+declare global {
+  interface Window {
+    onSpotifyWebPlaybackSDKReady: () => void;
+    Spotify: any;
+  }
+}
 
 // Spotify Web Playback SDK Types
 interface WebPlaybackState {
@@ -55,14 +64,18 @@ interface AdvancedPlayerProps {
 export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, className = '' }: AdvancedPlayerProps) {
   const [player, setPlayer] = useState<any>(null)
   const [isReady, setIsReady] = useState(false)
-  const [deviceId, setDeviceId] = useState<string>('')
   const [playbackState, setPlaybackState] = useState<WebPlaybackState | null>(null)
+  const [deviceId, setDeviceId] = useState<string | null>(null)
   const [volume, setVolume] = useState(0.5)
   const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [position, setPosition] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isExpanded, setIsExpanded] = useState(false)
+  
+  // Fallback für normalen Spotify Playback
+  const [currentPlayback, setCurrentPlayback] = useState<any>(null)
+  const [useWebPlayback, setUseWebPlayback] = useState(false)
 
   // Initialize Spotify Web Playback SDK
   useEffect(() => {
@@ -104,6 +117,7 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
             setPlaybackState(state)
             setPosition(state.position)
             setDuration(state.track_window.current_track?.duration_ms || 0)
+            setUseWebPlayback(true)
           }
         })
 
@@ -148,6 +162,29 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     }
   }, [isPremium, spotifyApi])
 
+  // Fallback: Aktueller Playback Status abrufen
+  useEffect(() => {
+    if (!spotifyApi || useWebPlayback) return
+
+    const fetchCurrentPlayback = async () => {
+      try {
+        const playback = await spotifyApi.getCurrentPlayback()
+        setCurrentPlayback(playback)
+        if (playback?.item) {
+          setPosition(playback.progress_ms || 0)
+          setDuration(playback.item.duration_ms || 0)
+        }
+      } catch (error) {
+        console.error('Fehler beim Abrufen des Playback-Status:', error)
+      }
+    }
+
+    fetchCurrentPlayback()
+    const interval = setInterval(fetchCurrentPlayback, 5000) // Alle 5 Sekunden
+
+    return () => clearInterval(interval)
+  }, [spotifyApi, useWebPlayback])
+
   // Load Spotify Web Playback SDK
   const loadSpotifySDK = (): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -172,18 +209,29 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     })
   }
 
-  // Position Update Effect
+  // Position Update Effect für Web Playback SDK
   useEffect(() => {
-    if (!playbackState || playbackState.paused) return
+    if (!playbackState || playbackState.paused || !useWebPlayback) return
 
     const interval = setInterval(() => {
       setPosition(prev => Math.min(prev + 1000, duration))
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [playbackState?.paused, duration])
+  }, [playbackState?.paused, duration, useWebPlayback])
 
-  // Player Controls
+  // Position Update Effect für normalen Playback
+  useEffect(() => {
+    if (useWebPlayback || !currentPlayback || currentPlayback.is_playing !== true) return
+
+    const interval = setInterval(() => {
+      setPosition(prev => Math.min(prev + 1000, duration))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [currentPlayback?.is_playing, duration, useWebPlayback])
+
+  // Player Controls für Web Playback SDK
   const togglePlayPause = async () => {
     if (!player) return
     try {
@@ -251,6 +299,19 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     }
   }
 
+  // Wechsel zum Web Playback SDK
+  const switchToWebPlayback = async () => {
+    if (!spotifyApi || !deviceId || !currentPlayback) return
+    
+    try {
+      // Aktuell spielenden Song zur Web Playback SDK wechseln
+      await spotifyApi.transferPlayback([deviceId], true)
+      setUseWebPlayback(true)
+    } catch (error) {
+      console.error('Fehler beim Wechsel zum Web Playback:', error)
+    }
+  }
+
   // Format time
   const formatTime = (ms: number) => {
     const minutes = Math.floor(ms / 60000)
@@ -258,7 +319,14 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  const currentTrack = playbackState?.track_window.current_track
+  // Bestimme den aktuellen Track
+  const currentTrack = useWebPlayback 
+    ? playbackState?.track_window.current_track
+    : currentPlayback?.item
+
+  const isPlaying = useWebPlayback 
+    ? !playbackState?.paused
+    : currentPlayback?.is_playing
 
   if (!isPremium) {
     return (
@@ -303,7 +371,7 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     )
   }
 
-  if (!isReady || !currentTrack) {
+  if (!isReady && !currentTrack) {
     return (
       <div className={`bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 ${className}`}>
         <div className="text-center">
@@ -321,21 +389,39 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
       className={`bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden ${className}`}
       layout
     >
+      {/* Fallback Info wenn nicht Web Playback SDK */}
+      {!useWebPlayback && currentTrack && (
+        <div className="bg-blue-500/10 border-b border-white/10 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-blue-400" />
+              <span className="text-sm text-blue-300">Läuft auf anderem Gerät</span>
+            </div>
+            <button
+              onClick={switchToWebPlayback}
+              className="px-3 py-1 text-xs bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-colors"
+            >
+              Hier übernehmen
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Player */}
       <div className="p-6">
         {/* Track Info */}
         <div className="flex items-center gap-4 mb-6">
           <img
-            src={currentTrack.album?.images?.[0]?.url || '/placeholder-album.png'}
-            alt={currentTrack.album?.name || 'Album'}
+            src={currentTrack?.album?.images?.[0]?.url || '/placeholder-album.png'}
+            alt={currentTrack?.album?.name || 'Album'}
             className="w-16 h-16 rounded-xl object-cover"
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white truncate">{currentTrack.name}</h3>
+            <h3 className="font-semibold text-white truncate">{currentTrack?.name}</h3>
             <p className="text-gray-400 truncate">
-              {currentTrack.artists?.map((artist: any) => artist.name).join(', ')}
+              {currentTrack?.artists?.map((artist: any) => artist.name).join(', ')}
             </p>
-            <p className="text-gray-500 text-sm truncate">{currentTrack.album?.name}</p>
+            <p className="text-gray-500 text-sm truncate">{currentTrack?.album?.name}</p>
           </div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -355,9 +441,9 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
                 min="0"
                 max={duration}
                 value={position}
-                onChange={(e) => seek(parseInt(e.target.value))}
+                onChange={(e) => useWebPlayback ? seek(parseInt(e.target.value)) : null}
                 className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-                disabled={playbackState?.disallows.seeking}
+                disabled={!useWebPlayback || playbackState?.disallows.seeking}
               />
             </div>
             <span className="text-xs text-gray-400 w-10">{formatTime(duration)}</span>
@@ -369,42 +455,43 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
           <button
             onClick={toggleShuffle}
             className={`p-2 rounded-lg transition-colors ${
-              playbackState?.shuffle 
+              (useWebPlayback ? playbackState?.shuffle : currentPlayback?.shuffle_state)
                 ? 'bg-green-500/20 text-green-400' 
                 : 'hover:bg-white/10 text-gray-400'
             }`}
             title="Shuffle"
+            disabled={!useWebPlayback}
           >
             <Shuffle className="w-4 h-4" />
           </button>
 
           <button
             onClick={skipToPrevious}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-300"
-            disabled={playbackState?.disallows.peeking_prev}
-            title="Previous Track"
+            className="p-3 hover:bg-white/10 rounded-lg transition-colors text-gray-300 hover:text-white"
+            title="Vorheriger Song"
+            disabled={!useWebPlayback}
           >
             <SkipBack className="w-5 h-5" />
           </button>
 
           <button
             onClick={togglePlayPause}
-            className="p-4 bg-white hover:bg-gray-200 rounded-full transition-all text-black"
-            disabled={playbackState?.disallows.pausing && playbackState?.disallows.resuming}
-            title={playbackState?.paused ? 'Play' : 'Pause'}
+            className="p-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg"
+            title={isPlaying ? 'Pause' : 'Play'}
+            disabled={!useWebPlayback}
           >
-            {playbackState?.paused ? (
-              <Play className="w-6 h-6 ml-0.5" />
+            {isPlaying ? (
+              <Pause className="w-6 h-6 text-white" />
             ) : (
-              <Pause className="w-6 h-6" />
+              <Play className="w-6 h-6 text-white ml-1" />
             )}
           </button>
 
           <button
             onClick={skipToNext}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-300"
-            disabled={playbackState?.disallows.peeking_next}
-            title="Next Track"
+            className="p-3 hover:bg-white/10 rounded-lg transition-colors text-gray-300 hover:text-white"
+            title="Nächster Song"
+            disabled={!useWebPlayback}
           >
             <SkipForward className="w-5 h-5" />
           </button>
@@ -412,35 +499,33 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
           <button
             onClick={toggleRepeat}
             className={`p-2 rounded-lg transition-colors ${
-              playbackState?.repeat_mode !== 0 
+              (useWebPlayback ? playbackState?.repeat_mode : currentPlayback?.repeat_state) !== 0
                 ? 'bg-green-500/20 text-green-400' 
                 : 'hover:bg-white/10 text-gray-400'
             }`}
-            title={`Repeat ${playbackState?.repeat_mode === 2 ? 'Track' : 'Context'}`}
+            title="Repeat"
+            disabled={!useWebPlayback}
           >
             <Repeat className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Volume Control */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setPlayerVolume(volume === 0 ? 0.5 : 0)}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.1"
-            value={volume}
-            onChange={(e) => setPlayerVolume(parseFloat(e.target.value))}
-            className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-          />
-          <span className="text-xs text-gray-400 w-8">{Math.round(volume * 100)}</span>
-        </div>
+        {/* Volume Control - nur für Web Playback SDK */}
+        {useWebPlayback && (
+          <div className="flex items-center gap-3">
+            <Volume2 className="w-4 h-4 text-gray-400" />
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setPlayerVolume(parseFloat(e.target.value))}
+              className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+            />
+            <span className="text-xs text-gray-400 w-8">{Math.round(volume * 100)}%</span>
+          </div>
+        )}
       </div>
 
       {/* Expanded View */}
@@ -504,12 +589,4 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
       `}</style>
     </motion.div>
   )
-}
-
-// Extend Window interface for Spotify SDK
-declare global {
-  interface Window {
-    onSpotifyWebPlaybackSDKReady: () => void;
-    Spotify: any;
-  }
 } 

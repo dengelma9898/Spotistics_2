@@ -437,6 +437,51 @@ export class SpotifyApi {
     return this.accessToken
   }
 
+  // Add to Queue
+  async addToQueue(uri: string, deviceId?: string): Promise<void> {
+    try {
+      const params = new URLSearchParams({ uri })
+      if (deviceId) {
+        params.append('device_id', deviceId)
+      }
+      
+      await this.request<void>(`/me/player/queue?${params}`, {
+        method: 'POST'
+      })
+      console.log('Track zur Queue hinzugefügt:', uri)
+    } catch (error: any) {
+      console.error('Fehler beim Hinzufügen zur Queue:', error)
+      // Ignoriere JSON-Parsing-Fehler bei erfolgreichen Requests
+      if (error.message?.includes('Unexpected token') || error.message?.includes('not valid JSON')) {
+        console.log('Add to Queue erfolgreich (JSON-Parsing-Fehler ignoriert)')
+        return
+      }
+      throw error
+    }
+  }
+
+  // Transfer Playback
+  async transferPlayback(deviceIds: string[], play?: boolean): Promise<void> {
+    try {
+      await this.request<void>('/me/player', {
+        method: 'PUT',
+        body: JSON.stringify({
+          device_ids: deviceIds,
+          play: play || false
+        })
+      })
+      console.log('Playback transferiert zu:', deviceIds)
+    } catch (error: any) {
+      console.error('Fehler beim Transfer:', error)
+      // Ignoriere JSON-Parsing-Fehler bei erfolgreichen Requests
+      if (error.message?.includes('Unexpected token') || error.message?.includes('not valid JSON')) {
+        console.log('Transfer erfolgreich (JSON-Parsing-Fehler ignoriert)')
+        return
+      }
+      throw error
+    }
+  }
+
   // Genre Seeds API deprecated - entfernt
 }
 

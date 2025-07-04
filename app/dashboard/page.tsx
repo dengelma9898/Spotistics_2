@@ -31,6 +31,7 @@ import { PersonalGreeting } from '@/components/PersonalGreeting'
 import { AdvancedPlayer } from '@/components/AdvancedPlayer'
 import { QueueDisplay } from '@/components/QueueDisplay'
 import { Spotlight } from '@/components/ui/spotlight'
+import { useToast, ToastContainer } from '@/components/ui/toast'
 import { motion } from 'motion/react'
 
 import { SpotifyApi } from '@/lib/spotify'
@@ -45,6 +46,7 @@ import {
 export default function DashboardPage() {
   const { data: session, status, update } = useSession()
   const router = useRouter()
+  const { toasts, removeToast, success, error: showError } = useToast()
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -217,6 +219,18 @@ export default function DashboardPage() {
     }
   }
 
+  const handleAddToQueue = async (uri: string) => {
+    if (!spotifyApi) return
+    
+    try {
+      await spotifyApi.addToQueue(uri, selectedDeviceId || undefined)
+      success('Track zur Queue hinzugefügt!', 'Der Song wird nach dem aktuellen Track gespielt')
+    } catch (error: any) {
+      console.error('Fehler beim Hinzufügen zur Queue:', error)
+      showError('Fehler beim Hinzufügen zur Queue', error.message || 'Unbekannter Fehler')
+    }
+  }
+
   const getTimeRangeLabel = () => {
     switch (timeRange) {
       case 'short_term': return { label: 'Letzter Monat', icon: '📅', description: 'Deine aktuellen Favorites' }
@@ -256,6 +270,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 relative overflow-hidden">
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
       {/* Aurora Background Effect */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute inset-0 bg-[radial-gradient(circle_farthest-side_at_0_100%,#00ccb1,transparent),radial-gradient(circle_farthest-side_at_100%_0,#7b61ff,transparent),radial-gradient(circle_farthest-side_at_100%_100%,#ffc414,transparent),radial-gradient(circle_farthest-side_at_0_0,#1ca0fb,#141316)] animate-aurora bg-[length:400%_400%]" />
@@ -406,8 +422,9 @@ export default function DashboardPage() {
                     type="track"
                     onPlay={handleTrackPlay}
                     onPause={handleTrackPause}
+                    onAddToQueue={handleAddToQueue}
                     isPlaying={isPlaying}
-                                         currentTrack={currentTrack || undefined}
+                    currentTrack={currentTrack || undefined}
                   />
                 ))}
               </div>
