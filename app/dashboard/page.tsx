@@ -28,6 +28,8 @@ import { ListeningActivity } from '@/components/ListeningActivity'
 import { DeviceSelector } from '@/components/DeviceSelector'
 import { RankingCard } from '@/components/RankingCard'
 import { PersonalGreeting } from '@/components/PersonalGreeting'
+import { AdvancedPlayer } from '@/components/AdvancedPlayer'
+import { QueueDisplay } from '@/components/QueueDisplay'
 import { Spotlight } from '@/components/ui/spotlight'
 import { motion } from 'motion/react'
 
@@ -436,6 +438,31 @@ export default function DashboardPage() {
             </section>
 
             {/* Audio Features entfernt - API deprecated */}
+
+            {/* Advanced Player Section */}
+            <section className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-2xl backdrop-blur-sm">
+                  <PlayCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Advanced Player 🎮</h2>
+                  <p className="text-gray-400">Vollständige Player-Kontrollen mit Web Playback SDK!</p>
+                </div>
+              </div>
+              
+              <div className="grid lg:grid-cols-2 gap-6">
+                <AdvancedPlayer
+                  spotifyApi={spotifyApi}
+                  isPremium={isPremium}
+                  selectedDeviceId={selectedDeviceId}
+                />
+                <QueueDisplay
+                  spotifyApi={spotifyApi}
+                  isPremium={isPremium}
+                />
+              </div>
+            </section>
 
             {/* Recent Activity */}
             {recentTracks && (

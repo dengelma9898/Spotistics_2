@@ -336,6 +336,107 @@ export class SpotifyApi {
     }
   }
 
+  // Erweiterte Player-Kontrollen für Phase 3
+  async getCurrentPlayback(): Promise<any> {
+    return this.request<any>('/me/player')
+  }
+
+  async getQueue(): Promise<any> {
+    try {
+      return this.request<any>('/me/player/queue')
+    } catch (error) {
+      console.log('Queue API nicht verfügbar:', error)
+      return { queue: [] }
+    }
+  }
+
+  async setShuffle(state: boolean, deviceId?: string): Promise<void> {
+    const params = new URLSearchParams({ state: state.toString() })
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/shuffle?${params}`, {
+      method: 'PUT'
+    })
+  }
+
+  async setRepeat(state: 'track' | 'context' | 'off', deviceId?: string): Promise<void> {
+    const params = new URLSearchParams({ state })
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/repeat?${params}`, {
+      method: 'PUT'
+    })
+  }
+
+  async setVolume(volumePercent: number, deviceId?: string): Promise<void> {
+    const params = new URLSearchParams({ volume_percent: volumePercent.toString() })
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/volume?${params}`, {
+      method: 'PUT'
+    })
+  }
+
+  async seek(positionMs: number, deviceId?: string): Promise<void> {
+    const params = new URLSearchParams({ position_ms: positionMs.toString() })
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/seek?${params}`, {
+      method: 'PUT'
+    })
+  }
+
+  async skipToNext(deviceId?: string): Promise<void> {
+    const params = new URLSearchParams()
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/next?${params}`, {
+      method: 'POST'
+    })
+  }
+
+  async skipToPrevious(deviceId?: string): Promise<void> {
+    const params = new URLSearchParams()
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/previous?${params}`, {
+      method: 'POST'
+    })
+  }
+
+  async play(options?: { uris?: string[], context_uri?: string, offset?: any }, deviceId?: string): Promise<void> {
+    const params = new URLSearchParams()
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    
+    return this.request<void>(`/me/player/play?${params}`, {
+      method: 'PUT',
+      body: options ? JSON.stringify(options) : undefined
+    })
+  }
+
+  async pause(deviceId?: string): Promise<void> {
+    const params = new URLSearchParams()
+    if (deviceId) {
+      params.append('device_id', deviceId)
+    }
+    return this.request<void>(`/me/player/pause?${params}`, {
+      method: 'PUT'
+    })
+  }
+
+  // Access Token für Web Playback SDK
+  getAccessToken(): string {
+    return this.accessToken
+  }
+
   // Genre Seeds API deprecated - entfernt
 }
 
