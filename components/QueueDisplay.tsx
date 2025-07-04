@@ -37,6 +37,7 @@ export function QueueDisplay({ spotifyApi, isPremium, className = '' }: QueueDis
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [deviceInfo, setDeviceInfo] = useState<any>(null)
 
   // Load Queue Data
   const loadQueue = async () => {
@@ -50,6 +51,9 @@ export function QueueDisplay({ spotifyApi, isPremium, className = '' }: QueueDis
       const playbackState = await spotifyApi.getCurrentPlayback()
       
       if (playbackState && playbackState.item) {
+        // Store device info for debugging
+        setDeviceInfo(playbackState.device)
+        
         setCurrentlyPlaying({
           id: playbackState.item.id,
           name: playbackState.item.name,
@@ -164,6 +168,16 @@ export function QueueDisplay({ spotifyApi, isPremium, className = '' }: QueueDis
           >
             {isExpanded ? <X className="w-5 h-5" /> : <MoreVertical className="w-5 h-5" />}
           </button>
+        </div>
+        
+        {/* Debug Info */}
+        <div className="mt-3 p-2 bg-gray-500/10 rounded-lg">
+          <div className="text-xs text-gray-400 space-y-1">
+            <div>🎵 Queue Device: {deviceInfo?.id ? deviceInfo.id.substring(0, 8) + '...' : 'Unbekannt'}</div>
+            {deviceInfo && (
+              <div>📻 {deviceInfo.name} ({deviceInfo.type}) - {deviceInfo.is_active ? 'Aktiv' : 'Inaktiv'}</div>
+            )}
+          </div>
         </div>
       </div>
 

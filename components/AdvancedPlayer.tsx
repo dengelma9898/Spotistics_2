@@ -403,23 +403,35 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
       className={`bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden ${className}`}
       layout
     >
-      {/* Fallback Info wenn nicht Web Playback SDK */}
-      {!useWebPlayback && currentTrack && (
-        <div className="bg-blue-500/10 border-b border-white/10 p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Smartphone className="w-4 h-4 text-blue-400" />
-              <span className="text-sm text-blue-300">Läuft auf anderem Gerät</span>
-            </div>
+      {/* Debug Info & Fallback Info */}
+      <div className="bg-gray-500/10 border-b border-white/10 p-3">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-4">
+            <span className="text-gray-400">
+              🎮 SDK Device: {deviceId ? deviceId.substring(0, 8) + '...' : 'Nicht verbunden'}
+            </span>
+            <span className="text-gray-400">
+              📱 Current Device: {currentPlayback?.device?.id ? currentPlayback.device.id.substring(0, 8) + '...' : 'Unbekannt'}
+            </span>
+            <span className="text-gray-400">
+              🔄 Mode: {useWebPlayback ? 'SDK' : 'API'}
+            </span>
+          </div>
+          {!useWebPlayback && currentTrack && deviceId && (
             <button
               onClick={switchToWebPlayback}
               className="px-3 py-1 text-xs bg-blue-500/20 text-blue-300 rounded-lg hover:bg-blue-500/30 transition-colors"
             >
               Hier übernehmen
             </button>
-          </div>
+          )}
         </div>
-      )}
+        {currentPlayback?.device && (
+          <div className="mt-2 text-xs text-gray-400">
+            📻 Läuft auf: {currentPlayback.device.name} ({currentPlayback.device.type})
+          </div>
+        )}
+      </div>
 
       {/* Main Player */}
       <div className="p-6">

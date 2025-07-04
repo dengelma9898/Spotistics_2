@@ -474,9 +474,13 @@ export default function DashboardPage() {
                 <div className="p-3 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-2xl backdrop-blur-sm">
                   <PlayCircle className="w-6 h-6 text-green-400" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h2 className="text-2xl font-bold text-white">Advanced Player 🎮</h2>
                   <p className="text-gray-400">Vollständige Player-Kontrollen mit Web Playback SDK!</p>
+                  {/* Debug Info */}
+                  <div className="mt-2 text-xs text-gray-500">
+                    🎯 Selected Device: {selectedDeviceId ? selectedDeviceId.substring(0, 8) + '...' : 'Kein Gerät ausgewählt'}
+                  </div>
                 </div>
               </div>
               
