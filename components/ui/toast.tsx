@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react'
 
 export interface ToastProps {
@@ -69,11 +69,9 @@ export interface ToastContainerProps {
 export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <Toast key={toast.id} {...toast} onClose={onClose} />
-        ))}
-      </AnimatePresence>
+      {toasts.map((toast) => (
+        <Toast key={toast.id} {...toast} onClose={onClose} />
+      ))}
     </div>
   )
 }

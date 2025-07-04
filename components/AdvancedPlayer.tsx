@@ -171,8 +171,11 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
         const playback = await spotifyApi.getCurrentPlayback()
         setCurrentPlayback(playback)
         if (playback?.item) {
-          setPosition(playback.progress_ms || 0)
-          setDuration(playback.item.duration_ms || 0)
+          // Nur Position/Duration von currentPlayback nehmen wenn Web Playback SDK nicht aktiv ist
+          if (!useWebPlayback || !playbackState) {
+            setPosition(playback.progress_ms || 0)
+            setDuration(playback.item.duration_ms || 0)
+          }
         }
       } catch (error) {
         console.error('Fehler beim Abrufen des Playback-Status:', error)
@@ -225,11 +228,26 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     if (useWebPlayback || !currentPlayback || currentPlayback.is_playing !== true) return
 
     const interval = setInterval(() => {
-      setPosition(prev => Math.min(prev + 1000, duration))
+      setPosition(prev => {
+        const newPos = prev + 1000
+        return Math.min(newPos, duration)
+      })
     }, 1000)
 
     return () => clearInterval(interval)
   }, [currentPlayback?.is_playing, duration, useWebPlayback])
+
+  // Bessere Synchronisation der Position und Duration
+  useEffect(() => {
+    if (currentPlayback?.item) {
+      // Wenn Web Playback SDK aktiv ist, aber currentPlayback neuere Daten hat
+      if (useWebPlayback && playbackState && currentPlayback.item.id !== playbackState.track_window.current_track?.id) {
+        // Track hat sich geändert, synchronisiere
+        setDuration(currentPlayback.item.duration_ms || 0)
+        setPosition(currentPlayback.progress_ms || 0)
+      }
+    }
+  }, [currentPlayback?.item?.id, playbackState?.track_window.current_track?.id, useWebPlayback])
 
   // Player Controls für Web Playback SDK
   const togglePlayPause = async () => {
@@ -319,14 +337,10 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  // Bestimme den aktuellen Track
-  const currentTrack = useWebPlayback 
-    ? playbackState?.track_window.current_track
-    : currentPlayback?.item
+  // Bestimme den aktuellen Track - priorisiere currentPlayback für bessere Sync
+  const currentTrack = currentPlayback?.item || playbackState?.track_window.current_track
 
-  const isPlaying = useWebPlayback 
-    ? !playbackState?.paused
-    : currentPlayback?.is_playing
+  const isPlaying = currentPlayback?.is_playing ?? (playbackState ? !playbackState.paused : false)
 
   if (!isPremium) {
     return (
@@ -455,7 +469,7 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
           <button
             onClick={toggleShuffle}
             className={`p-2 rounded-lg transition-colors ${
-              (useWebPlayback ? playbackState?.shuffle : currentPlayback?.shuffle_state)
+              (currentPlayback?.shuffle_state ?? playbackState?.shuffle)
                 ? 'bg-green-500/20 text-green-400' 
                 : 'hover:bg-white/10 text-gray-400'
             }`}
@@ -499,7 +513,8 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
           <button
             onClick={toggleRepeat}
             className={`p-2 rounded-lg transition-colors ${
-              (useWebPlayback ? playbackState?.repeat_mode : currentPlayback?.repeat_state) !== 0
+              (currentPlayback?.repeat_state !== 'off' && currentPlayback?.repeat_state !== null) ?? 
+              (playbackState?.repeat_mode !== 0)
                 ? 'bg-green-500/20 text-green-400' 
                 : 'hover:bg-white/10 text-gray-400'
             }`}
@@ -529,42 +544,39 @@ export function AdvancedPlayer({ spotifyApi, isPremium, selectedDeviceId, classN
       </div>
 
       {/* Expanded View */}
-      <AnimatePresence>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-white/10 p-6 bg-white/5"
-          >
-            <h4 className="font-semibold text-white mb-4">Queue & Features</h4>
-            
-            {/* Next Tracks */}
-            {playbackState?.track_window.next_tracks.length > 0 && (
-              <div>
-                <h5 className="text-sm font-medium text-gray-400 mb-2">Als Nächstes</h5>
-                <div className="space-y-2">
-                  {playbackState.track_window.next_tracks.slice(0, 3).map((track: any, index: number) => (
-                    <div key={index} className="flex items-center gap-3 text-sm">
-                      <img
-                        src={track.album?.images?.[0]?.url || '/placeholder-album.png'}
-                        alt={track.album?.name}
-                        className="w-8 h-8 rounded object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white truncate">{track.name}</p>
-                        <p className="text-gray-400 truncate text-xs">
-                          {track.artists?.map((artist: any) => artist.name).join(', ')}
-                        </p>
-                      </div>
+      {isExpanded && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="border-t border-white/10 p-6 bg-white/5"
+        >
+          <h4 className="font-semibold text-white mb-4">Queue & Features</h4>
+          
+          {/* Next Tracks */}
+          {playbackState?.track_window.next_tracks.length > 0 && (
+            <div>
+              <h5 className="text-sm font-medium text-gray-400 mb-2">Als Nächstes</h5>
+              <div className="space-y-2">
+                {playbackState.track_window.next_tracks.slice(0, 3).map((track: any, index: number) => (
+                  <div key={index} className="flex items-center gap-3 text-sm">
+                    <img
+                      src={track.album?.images?.[0]?.url || '/placeholder-album.png'}
+                      alt={track.album?.name}
+                      className="w-8 h-8 rounded object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white truncate">{track.name}</p>
+                      <p className="text-gray-400 truncate text-xs">
+                        {track.artists?.map((artist: any) => artist.name).join(', ')}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       <style jsx>{`
         .slider::-webkit-slider-thumb {

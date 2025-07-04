@@ -196,14 +196,21 @@ export default function DashboardPage() {
   }
 
   const handleTrackPlay = async (uri: string) => {
-    if (!spotifyApi || !selectedDeviceId) return
+    if (!spotifyApi) return
+    
+    if (!selectedDeviceId) {
+      showError('Kein Gerät ausgewählt', 'Bitte wähle erst ein Spotify-Gerät aus, um Musik abspielen zu können.')
+      return
+    }
     
     try {
       await spotifyApi.playTrack(uri, selectedDeviceId)
       setIsPlaying(true)
       setCurrentTrack(uri)
-    } catch (error) {
+      success('Track wird abgespielt', 'Die Wiedergabe wurde gestartet')
+    } catch (error: any) {
       console.error('Fehler beim Abspielen:', error)
+      showError('Fehler beim Abspielen', error.message || 'Konnte Track nicht abspielen')
     }
   }
 
@@ -222,8 +229,13 @@ export default function DashboardPage() {
   const handleAddToQueue = async (uri: string) => {
     if (!spotifyApi) return
     
+    if (!selectedDeviceId) {
+      showError('Kein Gerät ausgewählt', 'Bitte wähle erst ein Spotify-Gerät aus, um Tracks zur Queue hinzuzufügen.')
+      return
+    }
+    
     try {
-      await spotifyApi.addToQueue(uri, selectedDeviceId || undefined)
+      await spotifyApi.addToQueue(uri, selectedDeviceId)
       success('Track zur Queue hinzugefügt!', 'Der Song wird nach dem aktuellen Track gespielt')
     } catch (error: any) {
       console.error('Fehler beim Hinzufügen zur Queue:', error)
