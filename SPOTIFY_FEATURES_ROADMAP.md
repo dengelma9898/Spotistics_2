@@ -38,19 +38,12 @@
 - /browse/categories
 - /browse/featured-playlists
 - /browse/new-releases
-
-// ⚠️ VORSICHT - Player Control (Premium Required)
-- /me/player/play
-- /me/player/pause
-- /me/player/next
-- /me/player/previous
 ```
 
 ## 🚀 Aktuelle Features (Implementiert)
 - ✅ Spotify Authentifizierung mit NextAuth
 - ✅ Top Tracks & Artists (verschiedene Zeiträume)
 - ❌ ~~Audio Features Visualisierung~~ (DEPRECATED - Entfernt)
-- ✅ Device-Auswahl und Player-Integration
 - ✅ Premium Status Check
 - ✅ Moderne Aceternity UI mit Animationen
 
@@ -82,7 +75,7 @@ interface AlbumMetadata {
 }
 ```
 
-**✅ Neue Komponenten (Nur sichere APIs):**
+**✅ Komponenten (Nur sichere APIs):**
 - `TrackMetadataDetails.tsx` - Basis Track-Informationen
 - `PopularityChart.tsx` - Popularitäts-Verteilung der Top Tracks
 - `ReleaseDateTimeline.tsx` - Zeitliche Verteilung der Musik
@@ -102,23 +95,7 @@ interface AlbumMetadata {
 - Listening Patterns aus Top Tracks Zeiträumen
 - Artist-Netzwerk Analysen aus Top Artists
 
-## ✅ Phase 2: Soziale Features & Vergleiche - ABGESCHLOSSEN
-
-### 🤝 Freunde & Social
-```javascript
-// User Following
-spotifyApi.isFollowingArtists(['artistId1', 'artistId2'])
-spotifyApi.getFollowedArtists({ limit: 50 })
-
-// Playlist Following
-spotifyApi.areFollowingPlaylist(playlistId, [userId1, userId2])
-```
-
-**Features:**
-- Freunde-Dashboard (falls öffentliche Profile)
-- Musik-Geschmack Vergleiche
-- Gemeinsame Artists/Tracks entdecken
-- Social Listening Stats
+## ✅ Phase 2: Soziale Analysen & Vergleiche
 
 ### 📈 Vergleichs-Analysen
 - Musik-Geschmack vs. globale Trends
@@ -126,146 +103,93 @@ spotifyApi.areFollowingPlaylist(playlistId, [userId1, userId2])
 - Temporal Listening Pattern
 - Cross-Genre Diversity Index
 
-## 🎧 Phase 3: Erweiterte Player-Features
-
-### 🎛️ Playback Control (Premium erforderlich)
+### 🤝 Soziale Statistiken
 ```javascript
-// Erweiterte Player-Kontrolle
-spotifyApi.play({ uris: ['spotify:track:4iV5W9uYEdYUVa79Axb7Rh'] })
-spotifyApi.pause()
-spotifyApi.skipToNext()
-spotifyApi.skipToPrevious()
-spotifyApi.seek(positionMs)
-spotifyApi.setVolume(50)
-spotifyApi.setShuffle(true)
-spotifyApi.setRepeat('track') // 'track', 'context', 'off'
-spotifyApi.transferMyPlayback(['deviceId'])
+// User Following Analytics
+spotifyApi.isFollowingArtists(['artistId1', 'artistId2'])
+spotifyApi.getFollowedArtists({ limit: 50 })
 ```
 
-**Neue Komponenten:**
-- `AdvancedPlayer.tsx` - Vollständiger Player mit Visualisierung
-- `QueueManager.tsx` - Warteschlangen-Management
-- `CrossfadeControl.tsx` - Crossfade-Einstellungen
-- `VolumeVisualizer.tsx` - Lautstärke-Visualisierung
+**Analytics Features:**
+- Following-Verhalten Statistiken
+- Musik-Geschmack Vergleiche (falls öffentliche Profile)
+- Gemeinsame Artists/Tracks Analyse
+- Soziale Listening-Statistiken
 
-### 🎵 ❌ Smart Playlists (DEPRECATED)
+## 📚 Phase 3: Bibliotheks-Analysen
+
+### 💾 Saved Music Analytics
 ```javascript
-// ❌ NICHT MEHR VERWENDEN - Recommendations API ENTFERNT
-// spotifyApi.getRecommendations() - KOMPLETT ENTFERNT
-```
-
-**✅ Alternative Features (Sichere APIs):**
-- Playlist-Creation basierend auf Top Tracks Ähnlichkeiten
-- Manual Curation Tools mit Search API
-- Genre-basierte Playlists aus verfügbaren Kategorien
-- Zeitraum-basierte Playlists (z.B. "2010er Jahre" aus Release Dates)
-
-## 📚 Phase 4: Bibliotheks-Management
-
-### 💾 Saved Music
-```javascript
-// Gespeicherte Inhalte
+// Gespeicherte Inhalte Statistiken
 spotifyApi.getMySavedTracks({ limit: 50, offset: 0 })
 spotifyApi.getMySavedAlbums({ limit: 50 })
 spotifyApi.getMySavedShows({ limit: 50 })
 spotifyApi.getMySavedEpisodes({ limit: 50 })
-
-// Checking & Management
-spotifyApi.containsMySavedTracks(['trackId'])
-spotifyApi.addToMySavedTracks(['trackId'])
-spotifyApi.removeFromMySavedTracks(['trackId'])
 ```
 
 **Dashboard Features:**
-- Library Statistics & Growth
+- Library Statistics & Growth-Trends
 - Duplicate Detection in Library
-- Genre Organization
-- Release Date Timeline
-- "Rediscover" - Alte gespeicherte Musik
+- Genre Organization Analytics
+- Release Date Timeline Analysis
+- "Rediscover" - Alte gespeicherte Musik-Patterns
 
 ### 📂 Playlist Analytics
 ```javascript
-// Playlist Management
+// Playlist Analysis
 spotifyApi.getUserPlaylists(userId, { limit: 50 })
 spotifyApi.getPlaylistTracks(playlistId, { limit: 100 })
-spotifyApi.createPlaylist(userId, { name: 'My Playlist', description: 'Cool playlist' })
 ```
 
 **Analysen:**
 - Playlist Diversity Score
-- Emotional Journey durch Playlist
-- Optimal Playlist Length basierend auf Audio Features
-- Playlist Health Check (tote Links, etc.)
+- Genre-Verteilung in Playlists
+- Playlist-Längen Statistiken
+- Zeitliche Playlist-Entwicklung
 
-## 🎤 Phase 5: Podcast & Episode Features
+## 🔍 Phase 4: Discovery & Search Analytics
 
-### 🎙️ Shows & Episodes
+### 🔎 Search Pattern Analysis
 ```javascript
-// Podcast-spezifische Endpoints
-spotifyApi.getShow(showId, { market: 'US' })
-spotifyApi.getShows([showId1, showId2])
-spotifyApi.getShowEpisodes(showId, { limit: 20, offset: 0 })
-spotifyApi.getEpisode(episodeId, { market: 'US' })
-spotifyApi.getEpisodes([episodeId1, episodeId2])
-
-// User Podcast Data
-spotifyApi.getMySavedShows({ limit: 50 })
-spotifyApi.getMySavedEpisodes({ limit: 50 })
-```
-
-**Podcast Dashboard:**
-- Podcast Discovery basierend auf Musik-Geschmack
-- Episode Progress Tracking
-- Podcast Statistics (Hördauer, Favoriten)
-- Genre-basierte Podcast-Empfehlungen
-- Listen Time per Category
-
-## 🔍 Phase 6: Search & Discovery
-
-### 🔎 Advanced Search
-```javascript
-// Erweiterte Suchoptionen
+// Search-Verhalten Tracking
 spotifyApi.search('artist:Beatles year:1969', ['track'], { limit: 20 })
 spotifyApi.search('genre:jazz', ['artist', 'album'])
 ```
 
-**Such-Features:**
-- Visual Search Interface
-- Mood-basierte Suche
-- BPM-Bereich Suche
-- Year/Decade Browser
-- Similar Artists Discovery
+**Analytics Features:**
+- Such-Verhalten Patterns
+- Genre-Discovery Trends
+- Zeitbasierte Such-Statistiken
+- Discovery Success Rate
 
-### 🌍 Browse & Categories
+### 🌍 Browse Behavior Analytics
 ```javascript
-// Spotify's Editorial Content
+// Spotify's Editorial Content Analytics
 spotifyApi.getFeaturedPlaylists({ country: 'US', limit: 20 })
 spotifyApi.getNewReleases({ country: 'US', limit: 20 })
 spotifyApi.getCategories({ country: 'US', limit: 50 })
-spotifyApi.getCategory(categoryId, { country: 'US' })
-spotifyApi.getPlaylistsForCategory(categoryId, { country: 'US' })
 ```
 
-**Browse Features:**
-- New Releases personalisiert nach Geschmack
-- Genre Deep Dives
-- Mood-basierte Kategorien
-- Geographical Music Trends
+**Analytics Features:**
+- New Releases Interaction Patterns
+- Genre Deep Dive Statistics
+- Kategorie-Präferenzen Analyse
+- Geografische Musik-Trends
 
-## 📊 Phase 7: Advanced Analytics & Insights
+## 📊 Phase 5: Erweiterte Analytics & Insights
 
 ### 📈 Temporal Analytics
 ```javascript
-// Recently Played mit Timestamps
+// Recently Played Zeitanalyse
 spotifyApi.getMyRecentlyPlayedTracks({ limit: 50, after: timestamp })
 ```
 
-**Time-based Features:**
+**Time-based Analytics:**
 - Hörgewohnheiten nach Tageszeit
-- Wochentag-Pattern
-- Seasonal Music Changes
+- Wochentag-Pattern Analyse
+- Saisonale Musik-Änderungen
 - Sleep/Wake Listening Pattern
-- Productivity Correlation (Arbeitstage vs. Wochenende)
+- Produktivitäts-Korrelation (Arbeitstage vs. Wochenende)
 
 ### 🧠 ML-basierte Insights
 - Musik-Personality-Profil
@@ -274,173 +198,161 @@ spotifyApi.getMyRecentlyPlayedTracks({ limit: 50, after: timestamp })
 - Artist Loyalty Score
 - Variety vs. Repetition Balance
 
-## 🎨 Phase 8: Visualisierungen & UI
+## 🎨 Phase 6: Visualisierungen & UI
 
 ### 📊 Chart-Bibliothek Erweiterung
 ```typescript
-// Neue Chart-Typen
-- RadarChart für Audio Features
-- Heatmap für Listening Patterns
-- Network Graph für Artist Connections
-- TreeMap für Genre Distribution
-- Sankey Diagram für Music Flow
+// Analytics-fokussierte Chart-Typen
+- BarChart für Genre/Artist-Verteilung
+- LineChart für zeitliche Trends
+- PieChart für Listening-Pattern
+- Heatmap für Tageszeit-Aktivität
+- ScatterPlot für Popularity vs. Personal Preference
+- TreeMap für Genre-Hierarchien
 - Timeline für Musical Journey
+- RadarChart für Multi-dimensionale Analysen
 ```
 
-### 🎭 Interaktive Features
-- Drag & Drop Playlist Creator
-- Audio Feature Mixer (Empfehlungen erstellen)
-- Real-time Listening Party
-- Music Mood Ring (ändert Farbe basierend auf aktueller Musik)
+### 🎭 Interaktive Analytics Features
+- Drill-down Funktionalität in Charts
+- Filter und Segment-Analysen
+- Zeitraum-Vergleiche
+- Custom Analytics Dashboard
 
-## ⚡ Phase 9: Performance & Real-time
+## 🌐 Phase 7: Externe Datenquellen Integration
 
-### 🔄 Real-time Updates
-```javascript
-// WebSocket/Polling für Live-Updates
-setInterval(() => {
-  spotifyApi.getMyCurrentPlayingTrack()
-    .then(data => updateNowPlaying(data))
-}, 5000)
+### 🎵 Music Database APIs
+```typescript
+// Last.fm Integration für erweiterte Metadaten
+interface LastFmEnhancement {
+  scrobbles: number;
+  tags: string[];
+  similar_artists: Artist[];
+  artist_bio: string;
+  top_albums: Album[];
+}
+
+// MusicBrainz für detaillierte Musikdaten
+interface MusicBrainzData {
+  artist_country: string;
+  formation_year: number;
+  genres: string[];
+  relationships: ArtistRelation[];
+}
+
+// Genius API für Lyrics-Analyse
+interface LyricsAnalysis {
+  sentiment_score: number;
+  themes: string[];
+  language: string;
+  complexity_score: number;
+  explicit_content_details: string[];
+}
 ```
 
-**Real-time Features:**
-- Live Listening Status
-- Real-time Audio Visualizer
-- Sync mit Freunden
-- Live Playlist Collaboration
+### 🔍 Erweiterte Analysen mit externen Daten
+- **Geografische Analysen**: Artist-Herkunft Mapping
+- **Kulturelle Diversität**: Sprach- und Länder-Verteilung
+- **Lyrics-Analysen**: Sentiment, Themen, Komplexität
+- **Musiktheorie**: Tonarten, Akkordprogressionen (via MusicBrainz)
+- **Audio-Features Alternative**: Via Essentia/Librosa APIs
 
-### 💾 Caching & Offline
-- IndexedDB für Offline-Analytics
-- Background Sync für Player Status
-- Progressive Web App Features
-- Data Export Functionality
+## 📈 Phase 8: Advanced Statistical Analysis
 
-## 🎯 Phase 10: Gamification & Achievements
+### 🧮 Statistische Modelle
+- Clustering Algorithmen für Musik-Geschmack Profiling
+- Korrelations-Analysen zwischen verschiedenen Musik-Attributen
+- Trend-Analysen über Zeit
+- Anomalie-Erkennung in Hörgewohnheiten
+- Predictive Modeling für Musik-Präferenzen
 
-### 🏆 Music Achievements
-- **Explorer**: Höre 100 verschiedene Genres
-- **Time Traveler**: Höre Musik aus 5 verschiedenen Dekaden
-- **Deep Diver**: Höre 50 Songs eines Artists
-- **Early Bird**: Entdecke neue Artists vor 1000 anderen
-- **Mood Swing**: Höre Musik mit verschiedenen Valence-Werten an einem Tag
-- **BPM Master**: Höre Songs von 60-200 BPM
-- **Night Owl**: Höre mehr als 2 Stunden nach Mitternacht
-
-### 📊 Music Challenges
-- Weekly Discovery Challenge
-- Genre Exploration Quest
-- Vintage Music Month
-- Local Artist Support
-- Acoustic vs Electronic Balance
+### 📊 Business Intelligence Features
+- Custom Report Generation
+- Daten-Export für weitere Analysen
+- API für externe Analytics-Tools
+- Automated Insights Generation
 
 ## 🛠️ Technische Implementierung
 
-### 📦 Neue Dependencies
+### 📦 Analytics-fokussierte Dependencies
 ```bash
 npm install @spotify/web-api-ts-sdk
 npm install chart.js react-chartjs-2
 npm install d3 @types/d3
-npm install framer-motion
+npm install recharts
+npm install @visx/visx
 npm install date-fns
-npm install socket.io-client
+npm install lodash
+npm install @tensorflow/tfjs  # Für ML-Analysen
+npm install sentiment         # Für Lyrics-Sentiment
 ```
 
-### 🗂️ Neue Ordnerstruktur
+### 🗂️ Analytics-fokussierte Ordnerstruktur
 ```
 components/
 ├── analytics/
-│   ├── AdvancedAudioFeatures.tsx
-│   ├── TempoAnalysis.tsx
-│   ├── MoodChart.tsx
-│   └── ListeningPatterns.tsx
-├── player/
-│   ├── AdvancedPlayer.tsx
-│   ├── VisualizerComponent.tsx
-│   └── QueueManager.tsx
-├── social/
-│   ├── FriendsActivity.tsx
-│   ├── MusicComparison.tsx
-│   └── SocialStats.tsx
-├── discovery/
-│   ├── SmartRecommendations.tsx
-│   ├── MoodBasedSearch.tsx
-│   └── GenreExplorer.tsx
-└── achievements/
-    ├── AchievementsList.tsx
-    ├── ProgressTracking.tsx
-    └── ChallengeCenter.tsx
+│   ├── TemporalAnalysis.tsx
+│   ├── GenreEvolution.tsx
+│   ├── ListeningPatterns.tsx
+│   ├── StatisticalOverview.tsx
+│   └── PersonalityProfile.tsx
+├── charts/
+│   ├── InteractiveBarChart.tsx
+│   ├── TimelineChart.tsx
+│   ├── HeatmapChart.tsx
+│   ├── NetworkGraph.tsx
+│   └── CustomDashboard.tsx
+├── insights/
+│   ├── AutomatedInsights.tsx
+│   ├── TrendAnalysis.tsx
+│   └── AnomalyDetection.tsx
+└── external/
+    ├── LastFmIntegration.tsx
+    ├── LyricsAnalysis.tsx
+    └── GeographicAnalysis.tsx
 ```
 
-### 🔧 API-Integration Pattern
+### 🔧 Analytics API-Integration Pattern
 ```typescript
-// Custom Hook für Spotify API
-export const useSpotifyAPI = () => {
+// Custom Hook für Analytics
+export const useSpotifyAnalytics = () => {
   const { data: session } = useSession()
   
-  const sdk = useMemo(() => {
-    if (session?.accessToken) {
-      return SpotifyApi.withAccessToken(
-        process.env.SPOTIFY_CLIENT_ID!,
-        session.accessToken
-      )
-    }
-  }, [session])
+  const analyzeListeningPatterns = async () => {
+    // Zeitliche Analyse
+    // Trend-Erkennung
+    // Statistische Auswertung
+  }
   
-  return sdk
+  const generateInsights = async () => {
+    // ML-basierte Insights
+    // Automated Report Generation
+  }
+  
+  return { analyzeListeningPatterns, generateInsights }
 }
 ```
 
-## 🔍 Benutzerforschung & A/B Tests
-
-### 📊 Metrics zu verfolgen
-- User Engagement Time
-- Feature Adoption Rate
-- Music Discovery Success
-- Playlist Creation Rate
-- Return User Rate
-
-### 🧪 A/B Test Ideen
-- Verschiedene Visualisierungstypen
-- Information Density
-- Color Schemes für Mood
-- Recommendation Algorithm Varianten
-
-## 🚀 MVP vs Full Features
-
-### 🎯 MVP für nächste Version
-1. **Erweiterte Audio Features** (Radar Chart)
-2. **Listening Patterns** (Tageszeit-Analyse)
-3. **Smart Recommendations** (Mood-basiert)
-4. **Library Analytics** (Saved Music Stats)
-
-### 🌟 Advanced Features (Später)
-1. Social Features
-2. Podcast Integration
-3. Real-time Synchronization
-4. Machine Learning Insights
-5. Gamification
-
 ## 📝 Development Priorities
 
-### 🔥 High Priority
-- [ ] Advanced Audio Features Dashboard
-- [ ] Temporal Listening Analytics
-- [ ] Smart Playlist Generator
-- [ ] Library Statistics & Management
+### 🔥 High Priority (Analytics Core)
+- [ ] Erweiterte Temporal Analytics Dashboard
+- [ ] Externe API Integration (Last.fm, MusicBrainz)
+- [ ] ML-basierte Insights Engine
+- [ ] Interaktive Visualisierungs-Bibliothek
 
-### 🔶 Medium Priority
-- [ ] Podcast Analytics Integration
-- [ ] Social Comparison Features
-- [ ] Advanced Search Interface
-- [ ] Real-time Player Enhancements
+### 🔶 Medium Priority (Enhanced Analytics)
+- [ ] Lyrics-Sentiment Analyse
+- [ ] Geografische Musik-Analysen
+- [ ] Statistische Korrelations-Analysen
+- [ ] Custom Report Generator
 
-### 🔵 Nice to Have
-- [ ] Machine Learning Insights
-- [ ] Achievement System
-- [ ] Advanced Visualizations
-- [ ] Collaborative Features
+### 🔵 Nice to Have (Advanced Features)
+- [ ] Predictive Modeling
+- [ ] Automated Insights Generation
+- [ ] Business Intelligence Dashboard
+- [ ] API für externe Tools
 
 ---
 
-*Diese Roadmap basiert auf der vollständigen Spotify Web API und bietet einen strukturierten Ansatz für die kontinuierliche Erweiterung von Spotistics mit wertvollen, datengetriebenen Features.* 
+*Diese überarbeitete Roadmap fokussiert sich vollständig auf Analysen und Statistiken von Musik-Streaming-Daten und nutzt externe APIs zur Erweiterung der analytischen Möglichkeiten über die eingeschränkten Spotify-APIs hinaus.* 

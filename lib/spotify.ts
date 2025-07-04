@@ -21,7 +21,7 @@ export class SpotifyApi {
     this.accessToken = accessToken
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Cache check für GET requests
     const cacheKey = `${endpoint}_${JSON.stringify(options)}`
     const isGetRequest = !options.method || options.method === 'GET'
@@ -197,6 +197,90 @@ export class SpotifyApi {
   // Gefolgte Künstler
   async getFollowedArtists() {
     return this.request<{ artists: { items: SpotifyArtist[] } }>('/me/following?type=artist&limit=50')
+  }
+
+  // Bibliotheks-Analysen APIs
+  async getSavedTracks(limit: number = 50, offset: number = 0) {
+    return this.request<{ items: any[], total: number }>(`/me/tracks?limit=${limit}&offset=${offset}`)
+  }
+
+  async getSavedAlbums(limit: number = 50, offset: number = 0) {
+    return this.request<{ items: any[], total: number }>(`/me/albums?limit=${limit}&offset=${offset}`)
+  }
+
+  async getSavedShows(limit: number = 50, offset: number = 0) {
+    return this.request<{ items: any[], total: number }>(`/me/shows?limit=${limit}&offset=${offset}`)
+  }
+
+  async getSavedEpisodes(limit: number = 50, offset: number = 0) {
+    return this.request<{ items: any[], total: number }>(`/me/episodes?limit=${limit}&offset=${offset}`)
+  }
+
+  async getUserPlaylists(userId: string, limit: number = 50, offset: number = 0) {
+    return this.request<{ items: SpotifyPlaylist[], total: number }>(`/users/${userId}/playlists?limit=${limit}&offset=${offset}`)
+  }
+
+  async getMyPlaylists(limit: number = 50, offset: number = 0) {
+    return this.request<{ items: SpotifyPlaylist[], total: number }>(`/me/playlists?limit=${limit}&offset=${offset}`)
+  }
+
+  async getPlaylistTracks(playlistId: string, limit: number = 100, offset: number = 0) {
+    return this.request<{ items: any[], total: number }>(`/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`)
+  }
+
+  // Batch-Funktionen für große Datenmengen
+  async getAllSavedTracks(): Promise<any[]> {
+    const allTracks: any[] = []
+    let offset = 0
+    const limit = 50
+    
+    while (true) {
+      const response = await this.getSavedTracks(limit, offset)
+      allTracks.push(...response.items)
+      
+      if (response.items.length < limit) {
+        break
+      }
+      offset += limit
+    }
+    
+    return allTracks
+  }
+
+  async getAllSavedAlbums(): Promise<any[]> {
+    const allAlbums: any[] = []
+    let offset = 0
+    const limit = 50
+    
+    while (true) {
+      const response = await this.getSavedAlbums(limit, offset)
+      allAlbums.push(...response.items)
+      
+      if (response.items.length < limit) {
+        break
+      }
+      offset += limit
+    }
+    
+    return allAlbums
+  }
+
+  async getAllMyPlaylists(): Promise<SpotifyPlaylist[]> {
+    const allPlaylists: SpotifyPlaylist[] = []
+    let offset = 0
+    const limit = 50
+    
+    while (true) {
+      const response = await this.getMyPlaylists(limit, offset)
+      allPlaylists.push(...response.items)
+      
+      if (response.items.length < limit) {
+        break
+      }
+      offset += limit
+    }
+    
+    return allPlaylists
   }
 
   // Suche

@@ -146,5 +146,121 @@ export interface RecentlyPlayedResponse {
   href: string
 }
 
+// Bibliotheks-Analysen Types
+export interface SavedTrack {
+  added_at: string
+  track: SpotifyTrack
+}
+
+export interface SavedAlbum {
+  added_at: string
+  album: SpotifyAlbum
+}
+
+export interface SavedShow {
+  added_at: string
+  show: SpotifyShow
+}
+
+export interface SavedEpisode {
+  added_at: string
+  episode: SpotifyEpisode
+}
+
+export interface SpotifyShow {
+  id: string
+  name: string
+  description: string
+  images: SpotifyImage[]
+  publisher: string
+  total_episodes: number
+  explicit: boolean
+  external_urls: {
+    spotify: string
+  }
+  languages: string[]
+}
+
+export interface SpotifyEpisode {
+  id: string
+  name: string
+  description: string
+  images: SpotifyImage[]
+  duration_ms: number
+  release_date: string
+  explicit: boolean
+  external_urls: {
+    spotify: string
+  }
+  show: SpotifyShow
+}
+
+// Analytics Types für Phase 3
+export interface LibraryStats {
+  totalTracks: number
+  totalAlbums: number
+  totalShows: number
+  totalEpisodes: number
+  totalPlaylists: number
+  totalPlaylistTracks: number
+  oldestTrack: SavedTrack | null
+  newestTrack: SavedTrack | null
+  libraryGrowthOverTime: Array<{
+    date: string
+    tracksAdded: number
+    albumsAdded: number
+  }>
+}
+
+export interface GenreAnalysis {
+  genres: Array<{
+    name: string
+    count: number
+    percentage: number
+  }>
+  topGenres: string[]
+  diversityScore: number
+}
+
+export interface PlaylistAnalysis {
+  id: string
+  name: string
+  trackCount: number
+  totalDuration: number
+  genres: string[]
+  averagePopularity: number
+  averageReleaseYear: number
+  diversityScore: number
+  createdAt: string
+  lastModified: string
+}
+
+export interface DuplicateAnalysis {
+  duplicateTracks: Array<{
+    track: SpotifyTrack
+    locations: Array<{
+      type: 'library' | 'playlist'
+      name?: string
+      id?: string
+    }>
+  }>
+  duplicateCount: number
+  totalDuplicates: number
+}
+
+export interface RediscoverAnalysis {
+  oldTracks: Array<{
+    track: SpotifyTrack
+    addedAt: string
+    daysSinceAdded: number
+    lastPlayedEstimate?: string
+  }>
+  forgottenGems: Array<{
+    track: SpotifyTrack
+    reason: string
+    score: number
+  }>
+}
+
 // Spotify API Response Types bleiben unverändert
 // Web Playback SDK wurde entfernt - verwenden nur Web API 
