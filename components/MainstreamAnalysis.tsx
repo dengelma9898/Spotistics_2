@@ -40,11 +40,11 @@ export default function MainstreamAnalysis({ tracks, artists, title = "Mainstrea
     const balancedTracks = tracks.length - mainstreamTracks - undergroundTracks
     
     // Artists Analyse
-    const artistPopularities = artists.map(a => a.popularity)
+    const artistPopularities = artists.map(a => a.popularity || 0)
     const avgArtistPopularity = artistPopularities.reduce((sum, pop) => sum + pop, 0) / artists.length
     
-    const mainstreamArtists = artists.filter(a => a.popularity >= 70).length
-    const undergroundArtists = artists.filter(a => a.popularity <= 40).length
+    const mainstreamArtists = artists.filter(a => (a.popularity || 0) >= 70).length
+    const undergroundArtists = artists.filter(a => (a.popularity || 0) <= 40).length
     const balancedArtists = artists.length - mainstreamArtists - undergroundArtists
     
     // Gesamtscore berechnen (0-100)

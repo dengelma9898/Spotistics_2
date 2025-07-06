@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
   const [artists, setArtists] = useState<SpotifyArtist[]>([])
   const [user, setUser] = useState<SpotifyUser | null>(null)
   const [selectedTrack, setSelectedTrack] = useState<SpotifyTrack | null>(null)
-  const [timeRange, setTimeRange] = useState<string>('medium_term')
+  const [timeRange, setTimeRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,9 +40,9 @@ export default function AnalyticsPage() {
       }
 
       const [tracksResponse, artistsResponse, userResponse] = await Promise.all([
-        api.getTopTracks(timeRange, 50),
-        api.getTopArtists(timeRange, 50),
-        api.getCurrentUser()
+        api.currentUser.topItems('tracks', timeRange as 'short_term' | 'medium_term' | 'long_term', 50),
+        api.currentUser.topItems('artists', timeRange as 'short_term' | 'medium_term' | 'long_term', 50),
+        api.currentUser.profile()
       ])
       
       setTracks(tracksResponse.items as SpotifyTrack[])
@@ -62,9 +62,9 @@ export default function AnalyticsPage() {
   }
 
   const timeRangeOptions = [
-    { value: 'short_term', label: 'Letzte 4 Wochen', icon: '📅' },
-    { value: 'medium_term', label: 'Letzte 6 Monate', icon: '📊' },
-    { value: 'long_term', label: 'Gesamte Zeit', icon: '📈' }
+    { value: 'short_term' as const, label: 'Letzte 4 Wochen', icon: '📅' },
+    { value: 'medium_term' as const, label: 'Letzte 6 Monate', icon: '📊' },
+    { value: 'long_term' as const, label: 'Gesamte Zeit', icon: '📈' }
   ]
 
   if (!session) {

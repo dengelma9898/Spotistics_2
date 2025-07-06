@@ -2,26 +2,28 @@
 
 import React, { useState, useEffect } from 'react'
 import { Monitor, Smartphone, Speaker, Tv, Headphones, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
-import { SpotifyApiWrapper } from '@/lib/spotify'
+import { getSpotifyApi } from '@/lib/spotify'
 import { Device } from '@spotify/web-api-ts-sdk'
 
 interface SpotifyDeviceHelperProps {
-  spotifyApi: SpotifyApiWrapper | null
   isPremium: boolean
   onDeviceSelect?: (deviceId: string | null) => void
 }
 
-export function SpotifyDeviceHelper({ spotifyApi, isPremium, onDeviceSelect }: SpotifyDeviceHelperProps) {
+export function SpotifyDeviceHelper({ isPremium, onDeviceSelect }: SpotifyDeviceHelperProps) {
   const [devices, setDevices] = useState<Device[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showHelper, setShowHelper] = useState(false)
 
   const loadDevices = async () => {
-    if (!spotifyApi || !isPremium) return
+    if (!isPremium) return
     
     setIsLoading(true)
     try {
-      const deviceResponse = await spotifyApi.getAvailableDevices()
+      const spotifyApi = await getSpotifyApi()
+      if (!spotifyApi) return
+      
+      const deviceResponse = await spotifyApi.player.getAvailableDevices()
       // Das neue SDK gibt { devices: Device[] } zurück
       const deviceList = deviceResponse.devices || []
       setDevices(deviceList)
@@ -38,7 +40,7 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium, onDeviceSelect }: S
     // Aktualisiere Geräte alle 30 Sekunden
     const interval = setInterval(loadDevices, 30000)
     return () => clearInterval(interval)
-  }, [spotifyApi, isPremium])
+  }, [isPremium])
 
   const getDeviceIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -56,10 +58,11 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium, onDeviceSelect }: S
   }
 
   const transferToDevice = async (deviceId: string) => {
+    const spotifyApi = await getSpotifyApi()
     if (!spotifyApi) return
     
     try {
-      await spotifyApi.transferPlaybackToDevice(deviceId)
+      await spotifyApi.player.transferPlayback([deviceId], false)
       await loadDevices() // Aktualisiere die Geräteliste
     } catch (error) {
       console.error('Fehler beim Übertragen der Wiedergabe:', error)
@@ -204,7 +207,7 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium, onDeviceSelect }: S
                   )}
                   {!device.is_active && (
                     <button
-                      onClick={() => transferToDevice(device.id)}
+                      onClick={() => device.id && transferToDevice(device.id)}
                       className="text-xs text-accent hover:underline"
                     >
                       Aktivieren

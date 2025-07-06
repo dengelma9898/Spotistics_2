@@ -33,7 +33,7 @@ import { Spotlight } from '@/components/ui/spotlight'
 import { useToast, ToastContainer } from '@/components/ui/toast'
 import { motion } from 'motion/react'
 
-import { getSpotifyApi, SpotifyApiWrapper } from '@/lib/spotify'
+import { getSpotifyApi, checkPremiumStatus } from '@/lib/spotify'
 import { 
   SpotifyUser, 
   SpotifyTopItem, 
@@ -43,14 +43,13 @@ import {
 } from '@/types/spotify'
 
 export default function DashboardPage() {
-  const { data: session, status, update } = useSession()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const { toasts, removeToast, success, error: showError } = useToast()
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term')
-  const [spotifyApi, setSpotifyApi] = useState<SpotifyApiWrapper | null>(null)
   const [isPremium, setIsPremium] = useState<boolean>(false)
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
@@ -76,19 +75,15 @@ export default function DashboardPage() {
   }, [status, session?.accessToken])
 
   useEffect(() => {
-    if (spotifyApi) {
+    if (status === 'authenticated') {
       loadSpotifyData()
     }
-  }, [spotifyApi, timeRange])
+  }, [status, timeRange])
 
   // Session Refresh Event Listener
   useEffect(() => {
     const handleTokenRefresh = async () => {
       console.log('Token refresh angefordert, aktualisiere Session...')
-      // Entferne das update() call das den Loop verursacht
-      // await update()
-      
-      // Stattdessen reload nach kurzer Verzögerung
       setTimeout(() => {
         window.location.reload()
       }, 1000)
@@ -110,20 +105,23 @@ export default function DashboardPage() {
       setLoading(true)
       setError(null)
       
-              const api = await getSpotifyApi()
+      const spotifyApi = await getSpotifyApi()
+      if (!spotifyApi) {
+        setError('Spotify API nicht verfügbar')
+        return
+      }
       
-      // Token validieren
-      const isValid = await api.validateToken()
-      if (!isValid) {
+      // Token validieren durch Test-API-Call
+      try {
+        await spotifyApi.currentUser.profile()
+      } catch (error) {
         setError('Dein Spotify-Token ist abgelaufen. Melde dich einfach nochmal an! 😊')
         return
       }
 
       // Premium-Status prüfen
-      const premiumStatus = await api.checkPremiumStatus()
+      const premiumStatus = await checkPremiumStatus()
       setIsPremium(premiumStatus)
-
-      setSpotifyApi(api)
       
     } catch (error: any) {
       console.error('Fehler beim Initialisieren von Spotify:', error)
@@ -134,6 +132,7 @@ export default function DashboardPage() {
   }
 
   const loadSpotifyData = async () => {
+    const spotifyApi = await getSpotifyApi()
     if (!spotifyApi) return
 
     try {
@@ -148,11 +147,11 @@ export default function DashboardPage() {
         recentTracksData,
         followedArtistsData
       ] = await Promise.all([
-        spotifyApi.getCurrentUser(),
-        spotifyApi.getTopTracks(timeRange, 20),
-        spotifyApi.getTopArtists(timeRange, 20),
-        spotifyApi.getRecentlyPlayed(50),
-        spotifyApi.getFollowedArtists()
+        spotifyApi.currentUser.profile(),
+        spotifyApi.currentUser.topItems('tracks', timeRange, 20),
+        spotifyApi.currentUser.topItems('artists', timeRange, 20),
+        spotifyApi.player.getRecentlyPlayedTracks(50),
+        spotifyApi.currentUser.followedArtists()
       ])
 
       setUser(userData)
@@ -187,14 +186,11 @@ export default function DashboardPage() {
 
   const handleRetry = () => {
     setError(null)
-    if (spotifyApi) {
-      loadSpotifyData()
-    } else {
-      initializeSpotify()
-    }
+    loadSpotifyData()
   }
 
   const handleTrackPlay = async (uri: string) => {
+    const spotifyApi = await getSpotifyApi()
     if (!spotifyApi) return
     
     if (!selectedDeviceId) {
@@ -203,29 +199,29 @@ export default function DashboardPage() {
     }
     
     try {
-      await spotifyApi.playTrack(uri, selectedDeviceId)
-      setIsPlaying(true)
+      await spotifyApi.player.startResumePlayback(selectedDeviceId, undefined, [uri])
       setCurrentTrack(uri)
-      success('Track wird abgespielt', 'Die Wiedergabe wurde gestartet')
+      setIsPlaying(true)
+      success('Wiedergabe gestartet', 'Track wird jetzt auf deinem Gerät abgespielt! 🎵')
     } catch (error: any) {
       console.error('Fehler beim Abspielen:', error)
-      showError('Fehler beim Abspielen', error.message || 'Konnte Track nicht abspielen')
+      showError('Playback Fehler', 'Konnte den Track nicht abspielen. Versuche es nochmal!')
     }
   }
 
   const handleTrackPause = async () => {
+    const spotifyApi = await getSpotifyApi()
     if (!spotifyApi || !selectedDeviceId) return
     
     try {
-      await spotifyApi.pausePlayback(selectedDeviceId)
+      await spotifyApi.player.pausePlayback(selectedDeviceId)
       setIsPlaying(false)
-      setCurrentTrack(null)
-    } catch (error) {
+      success('Pausiert', 'Wiedergabe angehalten ⏸️')
+    } catch (error: any) {
       console.error('Fehler beim Pausieren:', error)
+      showError('Pause Fehler', 'Konnte die Wiedergabe nicht pausieren.')
     }
   }
-
-
 
   const getTimeRangeLabel = () => {
     switch (timeRange) {
@@ -475,7 +471,6 @@ export default function DashboardPage() {
 
              {/* Device Selector */}
        <DeviceSelector 
-         spotifyApi={spotifyApi}
          isPremium={isPremium}
          onDeviceSelect={setSelectedDeviceId}
          selectedDeviceId={selectedDeviceId}

@@ -123,11 +123,21 @@ export default function TrackDetailPage() {
           const spotifyApi = await getSpotifyApi()
           if (spotifyApi) {
             if (isPlaying) {
-              await spotifyApi.pausePlayback()
-              setIsPlaying(false)
+              // Für pausePlayback brauchen wir eine deviceId
+              const devices = await spotifyApi.player.getAvailableDevices()
+              const activeDevice = devices.devices.find(d => d.is_active) || devices.devices[0]
+              if (activeDevice?.id) {
+                await spotifyApi.player.pausePlayback(activeDevice.id)
+                setIsPlaying(false)
+              }
             } else {
-              await spotifyApi.playTrack(track.uri || `spotify:track:${track.id}`)
-              setIsPlaying(true)
+              // Für playTrack brauchen wir eine deviceId
+              const devices = await spotifyApi.player.getAvailableDevices()
+              const activeDevice = devices.devices.find(d => d.is_active) || devices.devices[0]
+              if (activeDevice?.id) {
+                await spotifyApi.player.startResumePlayback(activeDevice.id, undefined, [track.uri || `spotify:track:${track.id}`])
+                setIsPlaying(true)
+              }
             }
             return
           }

@@ -2,27 +2,29 @@
 
 import React, { useState, useEffect } from 'react'
 import { Monitor, Smartphone, Speaker, Tv, Headphones, Wifi, ChevronDown, RotateCcw } from 'lucide-react'
-import { SpotifyApiWrapper } from '@/lib/spotify'
-import { Device } from '@spotify/web-api-ts-sdk'
+import { getSpotifyApi } from '@/lib/spotify'
+import { Device, SpotifyApi } from '@spotify/web-api-ts-sdk'
 
 interface DeviceSelectorProps {
-  spotifyApi: SpotifyApiWrapper | null
   isPremium: boolean
   selectedDeviceId: string | null
   onDeviceSelect: (deviceId: string | null) => void
 }
 
-export function DeviceSelector({ spotifyApi, isPremium, selectedDeviceId, onDeviceSelect }: DeviceSelectorProps) {
+export function DeviceSelector({ isPremium, selectedDeviceId, onDeviceSelect }: DeviceSelectorProps) {
   const [devices, setDevices] = useState<Device[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const loadDevices = async () => {
-    if (!spotifyApi || !isPremium) return
+    if (!isPremium) return
     
     setIsLoading(true)
     try {
-      const deviceResponse = await spotifyApi.getAvailableDevices()
+      const spotifyApi = await getSpotifyApi()
+      if (!spotifyApi) return
+      
+      const deviceResponse = await spotifyApi.player.getAvailableDevices()
       // Das neue SDK gibt { devices: Device[] } zurück
       const deviceList = deviceResponse.devices || []
       setDevices(deviceList)
@@ -48,7 +50,7 @@ export function DeviceSelector({ spotifyApi, isPremium, selectedDeviceId, onDevi
     // Aktualisiere Geräte alle 15 Sekunden
     const interval = setInterval(loadDevices, 15000)
     return () => clearInterval(interval)
-  }, [spotifyApi, isPremium])
+  }, [isPremium])
 
   const getDeviceIcon = (type: string) => {
     switch (type.toLowerCase()) {

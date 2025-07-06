@@ -4,19 +4,17 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Music, ExternalLink, Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { SpotifyTrack } from '@/types/spotify'
-import { formatDuration } from '@/lib/spotify'
-import { SpotifyApiWrapper } from '@/lib/spotify'
+import { formatDuration, getSpotifyApi, isCurrentlyPlaying } from '@/lib/spotify'
 import { Track } from '@spotify/web-api-ts-sdk'
 
 interface TrackPlayerProps {
   track: SpotifyTrack | Track
   rank?: number
-  spotifyApi?: SpotifyApiWrapper | null
   isPremium?: boolean
   selectedDeviceId?: string | null
 }
 
-export function TrackPlayer({ track, rank, spotifyApi, isPremium = false, selectedDeviceId }: TrackPlayerProps) {
+export function TrackPlayer({ track, rank, isPremium = false, selectedDeviceId }: TrackPlayerProps) {
   const router = useRouter()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -36,10 +34,10 @@ export function TrackPlayer({ track, rank, spotifyApi, isPremium = false, select
 
   // Check if currently playing via Spotify (nur für Premium)
   useEffect(() => {
-    if (isPremium && spotifyApi) {
+    if (isPremium) {
       const checkPlayingStatus = async () => {
         try {
-          const playing = await spotifyApi.isCurrentlyPlaying(track.id)
+          const playing = await isCurrentlyPlaying(track.id)
           setIsPlaying(playing)
         } catch (error) {
           // Ignoriere Fehler bei Status-Check
@@ -50,27 +48,33 @@ export function TrackPlayer({ track, rank, spotifyApi, isPremium = false, select
       const interval = setInterval(checkPlayingStatus, 5000) // Check alle 5 Sekunden
       return () => clearInterval(interval)
     }
-  }, [isPremium, spotifyApi, track.id])
+  }, [isPremium, track.id])
 
   const handlePlayPause = async () => {
     try {
       setError(null)
       setIsLoading(true)
 
-      if (isPremium && spotifyApi) {
+      if (isPremium) {
         // Premium: Nutze Web API für vollständige Tracks mit Device-ID
         if (!selectedDeviceId) {
           setError('Bitte wähle ein Gerät aus')
           return
         }
         
-        if (isPlaying) {
-          await spotifyApi.pausePlayback(selectedDeviceId)
-          setIsPlaying(false)
-        } else {
-          await spotifyApi.playTrack(track.uri || `spotify:track:${track.id}`, selectedDeviceId)
-          setIsPlaying(true)
-        }
+                  const spotifyApi = await getSpotifyApi()
+          if (!spotifyApi) {
+            setError('Spotify API nicht verfügbar')
+            return
+          }
+          
+          if (isPlaying) {
+            await spotifyApi.player.pausePlayback(selectedDeviceId)
+            setIsPlaying(false)
+          } else {
+            await spotifyApi.player.startResumePlayback(selectedDeviceId, undefined, [track.uri || `spotify:track:${track.id}`])
+            setIsPlaying(true)
+          }
       } else {
         // Fallback: Nutze Preview-URL für 30-Sekunden-Previews
         if (!hasPreview) {
@@ -129,13 +133,13 @@ export function TrackPlayer({ track, rank, spotifyApi, isPremium = false, select
   }
 
   const getPlayButtonTooltip = () => {
-    if (isPremium && spotifyApi) {
+    if (isPremium) {
       return 'Vollständigen Track über Spotify abspielen'
     }
     return hasPreview ? '30-Sekunden-Vorschau abspielen' : 'Keine Vorschau verfügbar'
   }
 
-  const canPlay = (isPremium && spotifyApi) || hasPreview
+  const canPlay = isPremium || hasPreview
 
   return (
     <div 
