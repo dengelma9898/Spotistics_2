@@ -85,50 +85,50 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
   return (
     <div className="space-y-6">
       {/* Library Health Score */}
-              <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5" />
-              Library Health Score
-            </CardTitle>
-            <CardDescription>
-              Bewertet die Qualität und Organisation Ihrer Spotify Library basierend auf verschiedenen Faktoren
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Gesamtscore */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Gesamtscore</span>
-                    <div className="group relative">
-                      <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
-                        ?
-                      </div>
-                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-64">
-                        <div className="font-semibold mb-1">Health Score Berechnung:</div>
-                        <div className="space-y-1">
-                          <div>• Basis: 85%</div>
-                          <div>• Abzug pro Duplikat: -1%</div>
-                          <div>• Bonus für Vielfalt: +5%</div>
-                          <div>• Bonus für Aktivität: +10%</div>
-                        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5" />
+            Library Health Score
+          </CardTitle>
+          <CardDescription>
+            Bewertet die Qualität und Organisation Ihrer Spotify Library basierend auf verschiedenen Faktoren
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Gesamtscore */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Gesamtscore</span>
+                  <div className="group relative">
+                    <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
+                      ?
+                    </div>
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-3 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-64 pointer-events-none">
+                      <div className="font-semibold mb-1">Health Score Berechnung:</div>
+                      <div className="space-y-1">
+                        <div>• Basis: 85%</div>
+                        <div>• Abzug pro Duplikat: -1%</div>
+                        <div>• Bonus für Vielfalt: +5%</div>
+                        <div>• Bonus für Aktivität: +10%</div>
                       </div>
                     </div>
                   </div>
-                  <span className="text-2xl font-bold text-green-400">
-                    {Math.round(85 - (stats.duplicatesCount / stats.totalTracks) * 100)}%
-                  </span>
                 </div>
-                <Progress 
-                  value={85 - (stats.duplicatesCount / stats.totalTracks) * 100} 
-                  className="h-2"
-                />
-                <div className="mt-2 text-xs text-gray-400">
-                  Ein hoher Score zeigt eine gut organisierte, vielfältige Library ohne Duplikate
-                </div>
+                <span className="text-2xl font-bold text-green-400">
+                  {Math.round(85 - (stats.duplicatesCount / stats.totalTracks) * 100)}%
+                </span>
               </div>
+              <Progress 
+                value={85 - (stats.duplicatesCount / stats.totalTracks) * 100} 
+                className="h-2"
+              />
+              <div className="mt-2 text-xs text-gray-400">
+                Ein hoher Score zeigt eine gut organisierte, vielfältige Library ohne Duplikate
+              </div>
+            </div>
 
             {/* Einzelne Metriken */}
             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -179,10 +179,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Diesen Monat</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Tracks hinzugefügt in {new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
                   </div>
                 </div>
@@ -193,10 +193,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Letzten Monat</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Tracks hinzugefügt in {new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
                   </div>
                 </div>
@@ -207,10 +207,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Trend</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Veränderung gegenüber dem Vormonat
                   </div>
                 </div>
@@ -243,10 +243,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Gesamtdauer</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Gesamte Spielzeit aller gespeicherten Tracks
                   </div>
                 </div>
@@ -257,10 +257,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Ø pro Track</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Durchschnittliche Länge pro Track
                   </div>
                 </div>
@@ -273,10 +273,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Ø Popularität</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Spotify Popularitäts-Score (0-100). Höher = populärer
                   </div>
                 </div>
@@ -308,10 +308,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Einzigartige Artists</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Anzahl verschiedener Artists in Ihrer Library
                   </div>
                 </div>
@@ -322,10 +322,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Tracks pro Artist</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Durchschnittliche Anzahl Tracks pro Artist. Niedriger = vielfältiger
                   </div>
                 </div>
@@ -338,10 +338,10 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Vielfalt-Score</span>
                 <div className="group relative">
-                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help">
+                  <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 w-48">
+                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
                     Prozent einzigartiger Artists. Höher = vielfältiger
                   </div>
                 </div>
