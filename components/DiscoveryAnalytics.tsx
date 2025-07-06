@@ -371,17 +371,20 @@ export default function DiscoveryAnalytics() {
                        cx="50%"
                        cy="50%"
                        labelLine={false}
-                       label={({ period, percentage }) => `${period}: ${percentage.toFixed(1)}%`}
+                       label={false}
                        outerRadius={80}
                        fill="#8884d8"
                        dataKey="count"
-                       labelStyle={{ fill: '#ffffff', fontSize: '12px' }}
                      >
                        {vintageData.map((entry, index) => (
                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                        ))}
                      </Pie>
                      <Tooltip 
+                       formatter={(value, name, props) => [
+                         `${value} Tracks (${props.payload.percentage.toFixed(1)}%)`,
+                         props.payload.period
+                       ]}
                        contentStyle={{
                          backgroundColor: '#1f2937',
                          border: '1px solid #374151',
