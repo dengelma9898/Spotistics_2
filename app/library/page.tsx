@@ -233,35 +233,35 @@ export default function LibraryPage() {
           </p>
         </div>
 
-        {/* Quick Stats */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard
-              icon={<Music className="h-8 w-8" />}
-              title="Gespeicherte Tracks"
-              value={stats.totalTracks.toLocaleString()}
-              subtitle={`${stats.recentTracks} diesen Monat`}
-            />
-            <StatCard
-              icon={<Album className="h-8 w-8" />}
-              title="Gespeicherte Alben"
-              value={stats.totalAlbums.toLocaleString()}
-              subtitle={`${stats.uniqueArtists} Artists`}
-            />
-            <StatCard
-              icon={<ListMusic className="h-8 w-8" />}
-              title="Playlists"
-              value={stats.totalPlaylists.toLocaleString()}
-              subtitle="Eigene Playlists"
-            />
-            <StatCard
-              icon={<Clock className="h-8 w-8" />}
-              title="Gesamtdauer"
-              value={`${stats.totalDurationHours}h`}
-              subtitle={`⌀ ${stats.avgPopularity}% Popularität`}
-            />
-          </div>
-        )}
+                 {/* Quick Stats */}
+         {stats && (
+           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+             <StatCard
+               icon={<Music className="h-8 w-8" />}
+               title="Gespeicherte Tracks"
+               value={stats.totalTracks.toLocaleString()}
+               subtitle={`${stats.recentTracks} diesen Monat hinzugefügt`}
+             />
+             <StatCard
+               icon={<Album className="h-8 w-8" />}
+               title="Gespeicherte Alben"
+               value={stats.totalAlbums.toLocaleString()}
+               subtitle={`Von ${stats.uniqueArtists} verschiedenen Artists`}
+             />
+             <StatCard
+               icon={<ListMusic className="h-8 w-8" />}
+               title="Playlists"
+               value={stats.totalPlaylists.toLocaleString()}
+               subtitle="Eigene & verfolgte Playlists"
+             />
+             <StatCard
+               icon={<Clock className="h-8 w-8" />}
+               title="Gesamtdauer"
+               value={`${stats.totalDurationHours}h`}
+               subtitle={`Das sind ${Math.round(stats.totalDurationHours / 24)} Tage Musik`}
+             />
+           </div>
+         )}
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="w-full">
