@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, ComposedChart } from 'recharts'
 import { getSpotifyApi } from '@/lib/spotify'
 import { Clock, Activity, TrendingUp, PlayCircle, Pause, BarChart3 } from 'lucide-react'
 
@@ -206,19 +206,16 @@ export default function SessionLengthAnalysis() {
     const listeningIntensity = [
       { 
         level: 'Kurze Sessions', 
-        description: '< 20 Min',
         sessions: sessions.filter(s => s.duration < 20).length,
         color: '#ef4444'
       },
       { 
         level: 'Mittlere Sessions', 
-        description: '20-60 Min',
         sessions: sessions.filter(s => s.duration >= 20 && s.duration < 60).length,
         color: '#22c55e'
       },
       { 
         level: 'Lange Sessions', 
-        description: '60+ Min',
         sessions: sessions.filter(s => s.duration >= 60).length,
         color: '#a855f7'
       }
@@ -410,7 +407,7 @@ export default function SessionLengthAnalysis() {
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sessionStats.sessionsByTimeOfDay}>
+              <ComposedChart data={sessionStats.sessionsByTimeOfDay}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
                 <XAxis 
                   dataKey="timeOfDay" 
@@ -458,7 +455,7 @@ export default function SessionLengthAnalysis() {
                   strokeWidth={3}
                   dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
                 />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
@@ -490,7 +487,11 @@ export default function SessionLengthAnalysis() {
                       {entry.level}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mb-1">{entry.description}</p>
+                  <p className="text-xs text-gray-400 mb-1">
+                    {entry.level === 'Kurze Sessions' ? '< 20 Min' : 
+                     entry.level === 'Mittlere Sessions' ? '20-60 Min' : 
+                     '60+ Min'}
+                  </p>
                   <p className="text-lg font-bold text-white">
                     {entry.sessions} Sessions
                   </p>
