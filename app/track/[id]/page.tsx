@@ -122,24 +122,30 @@ export default function TrackDetailPage() {
         try {
           const spotifyApi = await getSpotifyApi()
           if (spotifyApi) {
-            if (isPlaying) {
-              // Für pausePlayback brauchen wir eine deviceId
-              const devices = await spotifyApi.player.getAvailableDevices()
-              const activeDevice = devices.devices.find(d => d.is_active) || devices.devices[0]
-              if (activeDevice?.id) {
+            // Get available devices once and check for null/undefined
+            const devicesResponse = await spotifyApi.player.getAvailableDevices()
+            
+            // Add defensive checks for API response
+            if (!devicesResponse || !devicesResponse.devices || !Array.isArray(devicesResponse.devices)) {
+              console.warn('Invalid devices response from Spotify API')
+              throw new Error('No valid devices response')
+            }
+            
+            const activeDevice = devicesResponse.devices.find((device: any) => device.is_active) || devicesResponse.devices[0]
+            
+            if (activeDevice?.id) {
+              if (isPlaying) {
                 await spotifyApi.player.pausePlayback(activeDevice.id)
                 setIsPlaying(false)
-              }
-            } else {
-              // Für playTrack brauchen wir eine deviceId
-              const devices = await spotifyApi.player.getAvailableDevices()
-              const activeDevice = devices.devices.find(d => d.is_active) || devices.devices[0]
-              if (activeDevice?.id) {
+              } else {
                 await spotifyApi.player.startResumePlayback(activeDevice.id, undefined, [track.uri || `spotify:track:${track.id}`])
                 setIsPlaying(true)
               }
+              return
+            } else {
+              console.warn('No active Spotify device found')
+              throw new Error('No active device available')
             }
-            return
           }
         } catch (apiError) {
           console.log('Spotify API playback failed, falling back to preview:', apiError)
