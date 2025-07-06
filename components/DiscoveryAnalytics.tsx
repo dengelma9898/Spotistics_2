@@ -319,26 +319,36 @@ export default function DiscoveryAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={discoveryData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="category" 
-                  tick={{ fontSize: 12 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    `${value} (${discoveryData.find(d => d.count === value)?.percentage.toFixed(1)}%)`,
-                    name
-                  ]}
-                />
-                <Bar dataKey="count" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+                         <ResponsiveContainer width="100%" height="100%">
+               <BarChart data={discoveryData}>
+                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+                 <XAxis 
+                   dataKey="category" 
+                   tick={{ fontSize: 12, fill: '#ffffff' }}
+                   angle={-45}
+                   textAnchor="end"
+                   height={80}
+                   stroke="#ffffff60"
+                 />
+                 <YAxis 
+                   tick={{ fontSize: 12, fill: '#ffffff' }}
+                   stroke="#ffffff60"
+                 />
+                 <Tooltip 
+                   formatter={(value, name) => [
+                     `${value} (${discoveryData.find(d => d.count === value)?.percentage.toFixed(1)}%)`,
+                     name
+                   ]}
+                   contentStyle={{
+                     backgroundColor: '#1f2937',
+                     border: '1px solid #374151',
+                     borderRadius: '8px',
+                     color: '#ffffff'
+                   }}
+                 />
+                 <Bar dataKey="count" fill="#8884d8" />
+               </BarChart>
+             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
@@ -354,25 +364,33 @@ export default function DiscoveryAnalytics() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={vintageData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ period, percentage }) => `${period}: ${percentage.toFixed(1)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="count"
-                  >
-                    {vintageData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+                               <ResponsiveContainer width="100%" height="100%">
+                   <PieChart>
+                     <Pie
+                       data={vintageData}
+                       cx="50%"
+                       cy="50%"
+                       labelLine={false}
+                       label={({ period, percentage }) => `${period}: ${percentage.toFixed(1)}%`}
+                       outerRadius={80}
+                       fill="#8884d8"
+                       dataKey="count"
+                       labelStyle={{ fill: '#ffffff', fontSize: '12px' }}
+                     >
+                       {vintageData.map((entry, index) => (
+                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                       ))}
+                     </Pie>
+                     <Tooltip 
+                       contentStyle={{
+                         backgroundColor: '#1f2937',
+                         border: '1px solid #374151',
+                         borderRadius: '8px',
+                         color: '#ffffff'
+                       }}
+                     />
+                   </PieChart>
+                 </ResponsiveContainer>
             </div>
 
             <div className="space-y-3">
