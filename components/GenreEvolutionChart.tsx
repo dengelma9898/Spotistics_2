@@ -54,7 +54,8 @@ export default function GenreEvolutionChart() {
 
       for (const batch of artistBatches) {
         const artists = await sdk.artists.get(batch)
-        allArtists.push(...artists.artists)
+        // Die API gibt direkt ein Array zurück, nicht artists.artists
+        allArtists.push(...artists)
         // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 100))
       }
