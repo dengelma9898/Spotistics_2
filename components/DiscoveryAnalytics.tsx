@@ -263,37 +263,46 @@ export default function DiscoveryAnalytics() {
               </div>
             </div>
 
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-500/20 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
-                  <p className="text-xs text-gray-400">Neue Tracks</p>
-                </div>
-                <p className="text-lg font-bold text-blue-400">
-                  {metrics.discoveryRate.toFixed(1)}%
-                </p>
-              </div>
+                         {/* Metrics Grid */}
+             <div className="grid grid-cols-2 gap-4">
+               <div className="bg-blue-500/20 rounded-lg p-3" title={`${(metrics.totalTracksAnalyzed * metrics.discoveryRate / 100).toFixed(0)} neue Tracks von ${metrics.totalTracksAnalyzed} analysierten`}>
+                 <div className="flex items-center gap-2 mb-1">
+                   <TrendingUp className="w-4 h-4 text-blue-400" />
+                   <p className="text-xs text-gray-400">Neue Tracks</p>
+                 </div>
+                 <p className="text-lg font-bold text-blue-400">
+                   {metrics.discoveryRate.toFixed(1)}%
+                 </p>
+                 <p className="text-xs text-gray-500 mt-1">
+                   {(metrics.totalTracksAnalyzed * metrics.discoveryRate / 100).toFixed(0)} von {metrics.totalTracksAnalyzed}
+                 </p>
+               </div>
 
-              <div className="bg-green-500/20 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Search className="w-4 h-4 text-green-400" />
-                  <p className="text-xs text-gray-400">Neue Artists</p>
-                </div>
-                <p className="text-lg font-bold text-green-400">
-                  {metrics.newArtistRate.toFixed(1)}%
-                </p>
-              </div>
+                             <div className="bg-green-500/20 rounded-lg p-3" title={`${(metrics.totalTracksAnalyzed * metrics.newArtistRate / 100).toFixed(0)} neue Artists entdeckt`}>
+                 <div className="flex items-center gap-2 mb-1">
+                   <Search className="w-4 h-4 text-green-400" />
+                   <p className="text-xs text-gray-400">Neue Artists</p>
+                 </div>
+                 <p className="text-lg font-bold text-green-400">
+                   {metrics.newArtistRate.toFixed(1)}%
+                 </p>
+                 <p className="text-xs text-gray-500 mt-1">
+                   {(metrics.totalTracksAnalyzed * metrics.newArtistRate / 100).toFixed(0)} neue Artists
+                 </p>
+               </div>
 
-              <div className="bg-yellow-500/20 rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Calendar className="w-4 h-4 text-yellow-400" />
-                  <p className="text-xs text-gray-400">Recent Releases</p>
-                </div>
-                <p className="text-lg font-bold text-yellow-400">
-                  {metrics.recentReleaseRate.toFixed(1)}%
-                </p>
-              </div>
+                             <div className="bg-yellow-500/20 rounded-lg p-3" title={`${(metrics.totalTracksAnalyzed * metrics.recentReleaseRate / 100).toFixed(0)} Tracks der letzten 2 Jahre`}>
+                 <div className="flex items-center gap-2 mb-1">
+                   <Calendar className="w-4 h-4 text-yellow-400" />
+                   <p className="text-xs text-gray-400">Recent Releases</p>
+                 </div>
+                 <p className="text-lg font-bold text-yellow-400">
+                   {metrics.recentReleaseRate.toFixed(1)}%
+                 </p>
+                 <p className="text-xs text-gray-500 mt-1">
+                   Letzte 2 Jahre
+                 </p>
+               </div>
 
               <div className="bg-purple-500/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
@@ -335,21 +344,27 @@ export default function DiscoveryAnalytics() {
                    stroke="#ffffff60"
                  />
                  <Tooltip 
-                   formatter={(value, name) => [
-                     `${value} (${discoveryData.find(d => d.count === value)?.percentage.toFixed(1)}%)`
-                   ]}
-                   labelFormatter={(label) => label}
+                   formatter={(value, name, props) => {
+                     const data = discoveryData.find(d => d.count === value)
+                     const totalTracks = metrics?.totalTracksAnalyzed || 0
+                     return [
+                       `${value} Tracks (${data?.percentage.toFixed(1)}%)`,
+                       `von ${totalTracks} analysierten Tracks`,
+                       props.dataKey === 'count' ? 'Discovery Kategorie' : ''
+                     ].filter(Boolean)
+                   }}
+                   labelFormatter={(label) => `${label}`}
                    contentStyle={{
                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
                      border: '1px solid rgba(255, 255, 255, 0.3)',
                      borderRadius: '6px',
                      color: '#ffffff',
                      fontSize: '12px',
-                     padding: '8px 12px',
-                     minWidth: 'auto',
+                     padding: '10px 14px',
+                     minWidth: '220px',
                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                    }}
-                   labelStyle={{ color: '#ffffff', fontSize: '12px' }}
+                   labelStyle={{ color: '#ffffff', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}
                    itemStyle={{ color: '#ffffff', fontSize: '12px' }}
                  />
                  <Bar dataKey="count" fill="#8884d8" />
@@ -387,21 +402,26 @@ export default function DiscoveryAnalytics() {
                        ))}
                      </Pie>
                      <Tooltip 
-                       formatter={(value, name, props) => [
-                         `${value} Tracks (${props.payload.percentage.toFixed(1)}%)`
-                       ]}
-                       labelFormatter={(label) => ''}
+                       formatter={(value, name, props) => {
+                         const data = props.payload
+                         return [
+                           `${value} Tracks (${data.percentage.toFixed(1)}%)`,
+                           `${data.period}`
+                         ]
+                       }}
+                       labelFormatter={(label) => 'Release Zeitraum'}
                        contentStyle={{
                          backgroundColor: 'rgba(0, 0, 0, 0.9)',
                          border: '1px solid rgba(255, 255, 255, 0.3)',
                          borderRadius: '6px',
                          color: '#ffffff',
                          fontSize: '12px',
-                         padding: '8px 12px',
-                         minWidth: 'auto',
+                         padding: '10px 14px',
+                         minWidth: '200px',
                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                        }}
                        itemStyle={{ color: '#ffffff', fontSize: '12px' }}
+                       labelStyle={{ color: '#ffffff', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}
                        cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                      />
                    </PieChart>
