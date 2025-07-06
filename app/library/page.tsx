@@ -7,460 +7,208 @@ import {
   getAllSavedAlbums, 
   getAllUserPlaylists,
   calculateLibraryStats,
-  analyzeLibraryGrowth,
   findDuplicateTracks,
-  getArtistsWithImages
+  analyzeLibraryGrowth
 } from '@/lib/spotify'
 import { Header } from '@/components/Header'
-import { StatCard } from '@/components/StatCard'
+import { LibraryOverview } from '@/components/LibraryOverview'
 import { LibraryGrowthChart } from '@/components/LibraryGrowthChart'
 import { DuplicateTracksList } from '@/components/DuplicateTracksList'
-import { LibraryOverview } from '@/components/LibraryOverview'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Music, Album, ListMusic, TrendingUp, Copy, Clock, Users, Star } from 'lucide-react'
-
-interface LibraryStats {
-  totalTracks: number
-  totalAlbums: number
-  totalPlaylists: number
-  recentTracks: number
-  yearlyTracks: number
-  uniqueArtists: number
-  totalDurationHours: number
-  avgPopularity: number
-  duplicatesCount: number
-  oldestTrack: any
-  newestTrack: any
-}
+import { BackgroundGradient } from '@/components/ui/background-gradient'
+import { 
+  Music, 
+  Album, 
+  ListMusic, 
+  TrendingUp, 
+  Loader2,
+  AlertCircle,
+  Database,
+  Calendar,
+  Copy
+} from 'lucide-react'
 
 export default function LibraryPage() {
   const { data: session } = useSession()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  
-  // Data States
   const [tracks, setTracks] = useState<any[]>([])
   const [albums, setAlbums] = useState<any[]>([])
   const [playlists, setPlaylists] = useState<any[]>([])
-  const [stats, setStats] = useState<LibraryStats | null>(null)
-  const [growthData, setGrowthData] = useState<any[]>([])
-  const [duplicates, setDuplicates] = useState<any[]>([])
-  const [artistsWithImages, setArtistsWithImages] = useState<Map<string, any>>(new Map())
-  
-  // Loading States
-  const [loadingTracks, setLoadingTracks] = useState(false)
-  const [loadingAlbums, setLoadingAlbums] = useState(false)
-  const [loadingPlaylists, setLoadingPlaylists] = useState(false)
-  const [loadingArtists, setLoadingArtists] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [loadingStep, setLoadingStep] = useState('')
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     if (session?.accessToken) {
       loadLibraryData()
     }
-  }, [session])
+  }, [session?.accessToken])
 
   const loadLibraryData = async () => {
-    setLoading(true)
-    setError(null)
-    
     try {
-      console.log('🚀 Starte Library Analytics Datenladung...')
+      setLoading(true)
+      setError(null)
       
-      // Parallel laden für bessere Performance
-      const [tracksData, albumsData, playlistsData] = await Promise.allSettled([
-        loadTracks(),
-        loadAlbums(),
-        loadPlaylists()
-      ])
-      
-      // Verarbeite Ergebnisse
-      const finalTracks = tracksData.status === 'fulfilled' ? tracksData.value : []
-      const finalAlbums = albumsData.status === 'fulfilled' ? albumsData.value : []
-      const finalPlaylists = playlistsData.status === 'fulfilled' ? playlistsData.value : []
-      
-      // Berechne Statistiken
-      const libraryStats = calculateLibraryStats(finalTracks, finalAlbums, finalPlaylists)
-      const growth = analyzeLibraryGrowth(finalTracks)
-      const duplicatesList = findDuplicateTracks(finalTracks)
-      
-      setStats(libraryStats)
-      setGrowthData(growth)
-      setDuplicates(duplicatesList)
-      
-      // Lade Artist-Bilder separat
-      if (finalTracks.length > 0) {
-        loadArtistImages(finalTracks)
-      }
-      
-      console.log('✅ Library Analytics Daten erfolgreich geladen')
-      console.log('📊 Stats:', libraryStats)
-      
-    } catch (err) {
-      console.error('❌ Fehler beim Laden der Library-Daten:', err)
-      setError('Fehler beim Laden der Library-Daten')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadTracks = async () => {
-    setLoadingTracks(true)
-    try {
+      setLoadingStep('Lade gespeicherte Tracks...')
       const tracksData = await getAllSavedTracks()
       setTracks(tracksData)
-      return tracksData
-    } catch (error) {
-      console.error('Fehler beim Laden der Tracks:', error)
-      return []
-    } finally {
-      setLoadingTracks(false)
-    }
-  }
-
-  const loadAlbums = async () => {
-    setLoadingAlbums(true)
-    try {
+      
+      setLoadingStep('Lade gespeicherte Alben...')
       const albumsData = await getAllSavedAlbums()
       setAlbums(albumsData)
-      return albumsData
-    } catch (error) {
-      console.error('Fehler beim Laden der Alben:', error)
-      return []
-    } finally {
-      setLoadingAlbums(false)
-    }
-  }
-
-  const loadPlaylists = async () => {
-    setLoadingPlaylists(true)
-    try {
+      
+      setLoadingStep('Lade Playlists...')
       const playlistsData = await getAllUserPlaylists()
       setPlaylists(playlistsData)
-      return playlistsData
-    } catch (error) {
-      console.error('Fehler beim Laden der Playlists:', error)
-      return []
+      
+      setLoadingStep('Analysiere Bibliothek...')
+      // Weitere Analysen hier
+      
+    } catch (err: any) {
+      console.error('Fehler beim Laden der Bibliothek:', err)
+      setError(err.message || 'Fehler beim Laden der Bibliotheksdaten')
     } finally {
-      setLoadingPlaylists(false)
+      setLoading(false)
+      setLoadingStep('')
     }
   }
 
-  const loadArtistImages = async (tracksData: any[]) => {
-    setLoadingArtists(true)
-    try {
-      // Sammle alle einzigartigen Artist-IDs
-      const artistIds = new Set<string>()
-      tracksData.forEach(savedTrack => {
-        savedTrack.track.artists.forEach((artist: any) => {
-          artistIds.add(artist.id)
-        })
-      })
-
-      const uniqueArtistIds = Array.from(artistIds)
-      console.log(`🎤 Lade Bilder für ${uniqueArtistIds.length} einzigartige Artists...`)
-      
-      const artistsMap = await getArtistsWithImages(uniqueArtistIds)
-      setArtistsWithImages(artistsMap)
-      
-      console.log(`✅ Artist-Bilder für ${artistsMap.size} Artists geladen`)
-    } catch (error) {
-      console.error('Fehler beim Laden der Artist-Bilder:', error)
-    } finally {
-      setLoadingArtists(false)
-    }
-  }
+  const stats = calculateLibraryStats(tracks, albums, playlists)
+  const growthData = analyzeLibraryGrowth(tracks)
+  const duplicates = findDuplicateTracks(tracks)
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-green-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-white mb-4">
-              Bitte melden Sie sich an
-            </h1>
-            <p className="text-gray-300">
-              Um Ihre Library Analytics zu sehen, müssen Sie sich mit Spotify anmelden.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-green-900">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-400 mx-auto mb-4"></div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Analysiere Ihre Spotify Library...
-            </h2>
-            <p className="text-gray-300 mb-4">
-              Dies kann einige Minuten dauern, je nach Größe Ihrer Library.
-            </p>
-            
-            {/* Loading Status */}
-            <div className="max-w-md mx-auto space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Tracks laden:</span>
-                <span className={loadingTracks ? 'text-yellow-400' : 'text-green-400'}>
-                  {loadingTracks ? 'Lädt...' : 'Fertig'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Alben laden:</span>
-                <span className={loadingAlbums ? 'text-yellow-400' : 'text-green-400'}>
-                  {loadingAlbums ? 'Lädt...' : 'Fertig'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Playlists laden:</span>
-                <span className={loadingPlaylists ? 'text-yellow-400' : 'text-green-400'}>
-                  {loadingPlaylists ? 'Lädt...' : 'Fertig'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Artist-Bilder laden:</span>
-                <span className={loadingArtists ? 'text-yellow-400' : 'text-green-400'}>
-                  {loadingArtists ? 'Lädt...' : 'Fertig'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-green-900">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">Fehler beim Laden</h2>
-            <p className="text-gray-300 mb-4">{error}</p>
-            <Button 
-              onClick={loadLibraryData}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Erneut versuchen
-            </Button>
-          </div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">Bitte melden Sie sich an, um Ihre Bibliothek zu sehen</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-green-900">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            📚 Library Analytics
-          </h1>
-          <p className="text-gray-300 max-w-2xl mx-auto">
-            Detaillierte Analyse Ihrer Spotify Library mit Statistiken, Trends und Insights.
-          </p>
-        </div>
+    <div className="min-h-screen bg-black text-white">
+      <Header user={user} />
+      <BackgroundGradient className="min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">Musik-Bibliothek</h1>
+                <p className="text-gray-400">Deine komplette Sammlung im Überblick</p>
+              </div>
+            </div>
+          </div>
 
-                 {/* Quick Stats */}
-         {stats && (
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-             <StatCard
-               icon={<Music className="h-8 w-8" />}
-               title="Gespeicherte Tracks"
-               value={stats.totalTracks.toLocaleString()}
-               subtitle={`${stats.recentTracks} diesen Monat hinzugefügt`}
-             />
-             <StatCard
-               icon={<Album className="h-8 w-8" />}
-               title="Gespeicherte Alben"
-               value={stats.totalAlbums.toLocaleString()}
-               subtitle={`Von ${stats.uniqueArtists} verschiedenen Artists`}
-             />
-             <StatCard
-               icon={<ListMusic className="h-8 w-8" />}
-               title="Playlists"
-               value={stats.totalPlaylists.toLocaleString()}
-               subtitle="Eigene & verfolgte Playlists"
-             />
-             <StatCard
-               icon={<Clock className="h-8 w-8" />}
-               title="Gesamtdauer"
-               value={`${stats.totalDurationHours}h`}
-               subtitle={`Das sind ${Math.round(stats.totalDurationHours / 24)} Tage Musik`}
-             />
-           </div>
-         )}
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-green-500 mx-auto mb-4" />
+                <p className="text-gray-400">{loadingStep}</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Dies kann bei großen Bibliotheken einige Minuten dauern...
+                </p>
+              </div>
+            </div>
+          )}
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="overview">Übersicht</TabsTrigger>
-            <TabsTrigger value="growth">Wachstum</TabsTrigger>
-            <TabsTrigger value="duplicates">Duplikate</TabsTrigger>
-            <TabsTrigger value="insights">Insights</TabsTrigger>
-          </TabsList>
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-6 mb-8">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400" />
+                <p className="text-red-300">{error}</p>
+              </div>
+              <button 
+                onClick={loadLibraryData}
+                className="mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-sm transition-colors"
+              >
+                Erneut versuchen
+              </button>
+            </div>
+          )}
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {stats && (
+          {!loading && !error && (
+            <div className="space-y-8">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <Music className="w-8 h-8 text-green-400" />
+                    <div>
+                      <p className="text-gray-400 text-sm">Gespeicherte Tracks</p>
+                      <p className="text-white text-xl font-bold">{stats.totalTracks}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <Album className="w-8 h-8 text-blue-400" />
+                    <div>
+                      <p className="text-gray-400 text-sm">Gespeicherte Alben</p>
+                      <p className="text-white text-xl font-bold">{stats.totalAlbums}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <ListMusic className="w-8 h-8 text-purple-400" />
+                    <div>
+                      <p className="text-gray-400 text-sm">Playlists</p>
+                      <p className="text-white text-xl font-bold">{stats.totalPlaylists}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+                  <div className="flex items-center gap-3">
+                    <Copy className="w-8 h-8 text-orange-400" />
+                    <div>
+                      <p className="text-gray-400 text-sm">Duplikate</p>
+                      <p className="text-white text-xl font-bold">{duplicates.length}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Library Overview */}
               <LibraryOverview 
                 stats={stats}
                 tracks={tracks}
                 albums={albums}
                 playlists={playlists}
-                artistsWithImages={artistsWithImages}
+                artistsWithImages={new Map()}
               />
-            )}
-          </TabsContent>
 
-          {/* Growth Tab */}
-          <TabsContent value="growth" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Library-Wachstum über Zeit
-                </CardTitle>
-                <CardDescription>
-                  Zeigt, wie Ihre Library über die Zeit gewachsen ist
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              {/* Growth Chart */}
+              <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <TrendingUp className="w-6 h-6 text-green-400" />
+                  <h2 className="text-xl font-bold">Bibliotheks-Wachstum</h2>
+                </div>
                 <LibraryGrowthChart data={growthData} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Duplicates Tab */}
-          <TabsContent value="duplicates" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Copy className="h-5 w-5" />
-                  Duplikate in Ihrer Library
-                  <Badge variant="secondary">{duplicates.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Tracks, die möglicherweise mehrfach in Ihrer Library gespeichert sind
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DuplicateTracksList duplicates={duplicates} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Insights Tab */}
-          <TabsContent value="insights" className="space-y-6">
-            {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Ältester vs Neuester Track */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Zeitspanne Ihrer Library</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {stats.oldestTrack && (
-                      <div>
-                        <h4 className="font-semibold text-sm text-gray-400 mb-2">
-                          Ältester Track
-                        </h4>
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src={stats.oldestTrack.track.album.images[0]?.url || '/placeholder-album.png'}
-                            alt={stats.oldestTrack.track.name}
-                            className="w-12 h-12 rounded"
-                          />
-                          <div>
-                            <p className="font-medium">{stats.oldestTrack.track.name}</p>
-                            <p className="text-sm text-gray-400">
-                              {stats.oldestTrack.track.artists[0]?.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Hinzugefügt: {new Date(stats.oldestTrack.added_at).toLocaleDateString('de-DE')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {stats.newestTrack && (
-                      <div>
-                        <h4 className="font-semibold text-sm text-gray-400 mb-2">
-                          Neuester Track
-                        </h4>
-                        <div className="flex items-center gap-3">
-                          <img 
-                            src={stats.newestTrack.track.album.images[0]?.url || '/placeholder-album.png'}
-                            alt={stats.newestTrack.track.name}
-                            className="w-12 h-12 rounded"
-                          />
-                          <div>
-                            <p className="font-medium">{stats.newestTrack.track.name}</p>
-                            <p className="text-sm text-gray-400">
-                              {stats.newestTrack.track.artists[0]?.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Hinzugefügt: {new Date(stats.newestTrack.added_at).toLocaleDateString('de-DE')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Aktivitäts-Insights */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Aktivitäts-Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">Tracks dieses Jahr</span>
-                      <span className="font-medium">{stats.yearlyTracks}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">Tracks diesen Monat</span>
-                      <span className="font-medium">{stats.recentTracks}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">Durchschnittliche Popularität</span>
-                      <span className="font-medium">{stats.avgPopularity}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-400">Duplikate gefunden</span>
-                      <span className="font-medium text-yellow-400">{stats.duplicatesCount}</span>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
 
-        {/* Refresh Button */}
-        <div className="text-center mt-8">
-          <Button 
-            onClick={loadLibraryData}
-            className="bg-green-600 hover:bg-green-700"
-            disabled={loading}
-          >
-            {loading ? 'Lädt...' : 'Daten aktualisieren'}
-          </Button>
+              {/* Duplicates */}
+              {duplicates.length > 0 && (
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Copy className="w-6 h-6 text-orange-400" />
+                    <h2 className="text-xl font-bold">Duplikate bereinigen</h2>
+                  </div>
+                  <DuplicateTracksList duplicates={duplicates} />
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      </BackgroundGradient>
     </div>
   )
 } 
