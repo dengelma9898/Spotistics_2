@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@spotify/web-api-ts-sdk": "^1.2.0",
     "@tabler/icons-react": "^3.34.0",
     "autoprefixer": "10.4.20",
     "axios": "^1.10.0",

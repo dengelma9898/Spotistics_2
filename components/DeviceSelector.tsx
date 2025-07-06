@@ -1,43 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Monitor, Smartphone, Headphones, ChevronUp, Volume2, Wifi, Speaker, Tv } from 'lucide-react'
-import { SpotifyApi } from '@/lib/spotify'
-
-interface Device {
-  id: string
-  is_active: boolean
-  is_private_session: boolean
-  is_restricted: boolean
-  name: string
-  type: string
-  volume_percent: number
-}
+import React, { useState, useEffect } from 'react'
+import { Monitor, Smartphone, Speaker, Tv, Headphones, Wifi, ChevronDown, RotateCcw } from 'lucide-react'
+import { getSpotifyApi } from '@/lib/spotify'
+import { Device, SpotifyApi } from '@spotify/web-api-ts-sdk'
 
 interface DeviceSelectorProps {
-  spotifyApi: SpotifyApi | null
   isPremium: boolean
   selectedDeviceId: string | null
   onDeviceSelect: (deviceId: string | null) => void
 }
 
-export function DeviceSelector({ spotifyApi, isPremium, selectedDeviceId, onDeviceSelect }: DeviceSelectorProps) {
+export function DeviceSelector({ isPremium, selectedDeviceId, onDeviceSelect }: DeviceSelectorProps) {
   const [devices, setDevices] = useState<Device[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const loadDevices = async () => {
-    if (!spotifyApi || !isPremium) return
+    if (!isPremium) return
     
     setIsLoading(true)
     try {
-      const deviceList = await spotifyApi.getAvailableDevices()
+      const spotifyApi = await getSpotifyApi()
+      if (!spotifyApi) return
+      
+      const deviceResponse = await spotifyApi.player.getAvailableDevices()
+      // Das neue SDK gibt { devices: Device[] } zurück
+      const deviceList = deviceResponse.devices || []
       setDevices(deviceList)
       console.log('Gefundene Geräte:', deviceList)
       
       // Auto-select active device if none selected
       if (!selectedDeviceId) {
-        const activeDevice = deviceList.find(device => device.is_active)
+        const activeDevice = deviceList.find((device: Device) => device.is_active)
         if (activeDevice) {
           onDeviceSelect(activeDevice.id)
         }
@@ -55,7 +50,7 @@ export function DeviceSelector({ spotifyApi, isPremium, selectedDeviceId, onDevi
     // Aktualisiere Geräte alle 15 Sekunden
     const interval = setInterval(loadDevices, 15000)
     return () => clearInterval(interval)
-  }, [spotifyApi, isPremium])
+  }, [isPremium])
 
   const getDeviceIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -227,7 +222,7 @@ export function DeviceSelector({ spotifyApi, isPremium, selectedDeviceId, onDevi
                 className="p-3 hover:bg-white/10 rounded-2xl transition-all duration-200 disabled:opacity-50 group"
                 title={devices.length === 0 ? 'Lade Geräte...' : 'Gerät auswählen'}
               >
-                <ChevronUp 
+                <ChevronDown 
                   className={`w-5 h-5 transition-all duration-300 text-gray-400 group-hover:text-white ${
                     isOpen ? 'transform rotate-180' : ''
                   } ${isLoading ? 'animate-pulse' : ''}`} 

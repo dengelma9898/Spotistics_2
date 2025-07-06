@@ -36,7 +36,7 @@ export default function ListeningPatterns({ title = "Hörgewohnheiten" }: Listen
       const spotifyApi = await getSpotifyApi()
       if (!spotifyApi) throw new Error('Spotify API nicht verfügbar')
 
-      const response = await spotifyApi.getRecentlyPlayed(50)
+      const response = await spotifyApi.player.getRecentlyPlayedTracks(50)
       setRecentlyPlayed(response)
     } catch (err: any) {
       console.error('Fehler beim Laden der kürzlich gespielten Tracks:', err)

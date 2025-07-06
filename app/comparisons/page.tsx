@@ -32,7 +32,7 @@ export default function ComparisonsPage() {
       const spotifyApi = await getSpotifyApi()
       if (!spotifyApi) return
 
-      const userData = await spotifyApi.getCurrentUser()
+      const userData = await spotifyApi.currentUser.profile()
       setUser(userData)
     } catch (err: any) {
       console.error('Fehler beim Laden der Benutzerdaten:', err)
@@ -48,8 +48,8 @@ export default function ComparisonsPage() {
 
       // Parallele API-Aufrufe für bessere Performance
       const [tracksResponse, artistsResponse] = await Promise.all([
-        spotifyApi.getTopTracks(timeRange, 50),
-        spotifyApi.getTopArtists(timeRange, 50)
+        spotifyApi.currentUser.topItems('tracks', timeRange as 'short_term' | 'medium_term' | 'long_term', 50),
+        spotifyApi.currentUser.topItems('artists', timeRange as 'short_term' | 'medium_term' | 'long_term', 50)
       ])
 
       setTracks(tracksResponse.items)
@@ -236,8 +236,8 @@ export default function ComparisonsPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-white/80 text-sm">Ø Genres/Artist</span>
                       <span className="text-white font-medium">
-                        {artists.length > 0 ? 
-                          (artists.reduce((sum, a) => sum + a.genres.length, 0) / artists.length).toFixed(1) 
+                                                {artists.length > 0 ? 
+                          (artists.reduce((sum, a) => sum + (a.genres?.length || 0), 0) / artists.length).toFixed(1)
                           : '0'}
                       </span>
                     </div>

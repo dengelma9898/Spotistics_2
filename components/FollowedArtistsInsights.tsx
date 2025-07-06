@@ -46,7 +46,7 @@ export default function FollowedArtistsInsights({
       const spotifyApi = await getSpotifyApi()
       if (!spotifyApi) throw new Error('Spotify API nicht verfügbar')
 
-      const response = await spotifyApi.getFollowedArtists()
+      const response = await spotifyApi.currentUser.followedArtists()
       setFollowedArtists(response.artists.items)
     } catch (err: any) {
       console.error('Fehler beim Laden der gefolgten Artists:', err)
@@ -81,16 +81,16 @@ export default function FollowedArtistsInsights({
     // Genre-Verteilung analysieren
     const genreSpread: { [key: string]: number } = {}
     followedArtists.forEach(artist => {
-      artist.genres.forEach(genre => {
+      artist.genres?.forEach(genre => {
         genreSpread[genre] = (genreSpread[genre] || 0) + 1
       })
     })
     
     // Popularitäts-Verteilung
-    const popularities = followedArtists.map(a => a.popularity)
-    const mainstream = followedArtists.filter(a => a.popularity >= 70).length
-    const emerging = followedArtists.filter(a => a.popularity >= 40 && a.popularity < 70).length
-    const underground = followedArtists.filter(a => a.popularity < 40).length
+    const popularities = followedArtists.map(a => a.popularity || 0)
+    const mainstream = followedArtists.filter(a => (a.popularity || 0) >= 70).length
+    const emerging = followedArtists.filter(a => (a.popularity || 0) >= 40 && (a.popularity || 0) < 70).length
+    const underground = followedArtists.filter(a => (a.popularity || 0) < 40).length
     
     const popularitySpread = {
       mainstream: Math.round((mainstream / followedArtists.length) * 100),
@@ -295,7 +295,7 @@ export default function FollowedArtistsInsights({
             {followedArtists.slice(0, 8).map((artist) => (
               <div key={artist.id} className="group">
                 <div className="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-all">
-                  {artist.images[0] ? (
+                  {artist.images?.[0] ? (
                     <img 
                       src={artist.images[0].url} 
                       alt={artist.name}

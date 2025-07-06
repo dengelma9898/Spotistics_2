@@ -288,7 +288,7 @@ export function ProfileModal({ isOpen, onClose, user }: ProfileModalProps) {
                       Explicit Content: {user.explicit_content?.filter_enabled ? 'Blocked' : 'Allowed'}
                     </span>
                     {user.explicit_content?.filter_locked && (
-                      <Shield size={14} className="text-orange-400" title="Settings locked" />
+                      <Shield size={14} className="text-orange-400" />
                     )}
                   </div>
                 )}

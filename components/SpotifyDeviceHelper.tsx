@@ -1,35 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Smartphone, Monitor, Headphones, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
-import { SpotifyApi } from '@/lib/spotify'
+import React, { useState, useEffect } from 'react'
+import { Monitor, Smartphone, Speaker, Tv, Headphones, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react'
+import { getSpotifyApi } from '@/lib/spotify'
+import { Device } from '@spotify/web-api-ts-sdk'
 
 interface SpotifyDeviceHelperProps {
-  spotifyApi: SpotifyApi | null
   isPremium: boolean
+  onDeviceSelect?: (deviceId: string | null) => void
 }
 
-interface Device {
-  id: string
-  is_active: boolean
-  is_private_session: boolean
-  is_restricted: boolean
-  name: string
-  type: string
-  volume_percent: number
-}
-
-export function SpotifyDeviceHelper({ spotifyApi, isPremium }: SpotifyDeviceHelperProps) {
+export function SpotifyDeviceHelper({ isPremium, onDeviceSelect }: SpotifyDeviceHelperProps) {
   const [devices, setDevices] = useState<Device[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showHelper, setShowHelper] = useState(false)
 
   const loadDevices = async () => {
-    if (!spotifyApi || !isPremium) return
+    if (!isPremium) return
     
     setIsLoading(true)
     try {
-      const deviceList = await spotifyApi.getAvailableDevices()
+      const spotifyApi = await getSpotifyApi()
+      if (!spotifyApi) return
+      
+      const deviceResponse = await spotifyApi.player.getAvailableDevices()
+      // Das neue SDK gibt { devices: Device[] } zurück
+      const deviceList = deviceResponse.devices || []
       setDevices(deviceList)
     } catch (error) {
       console.error('Fehler beim Laden der Geräte:', error)
@@ -44,7 +40,7 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium }: SpotifyDeviceHelp
     // Aktualisiere Geräte alle 30 Sekunden
     const interval = setInterval(loadDevices, 30000)
     return () => clearInterval(interval)
-  }, [spotifyApi, isPremium])
+  }, [isPremium])
 
   const getDeviceIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -52,16 +48,21 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium }: SpotifyDeviceHelp
         return <Monitor className="w-4 h-4" />
       case 'smartphone':
         return <Smartphone className="w-4 h-4" />
+      case 'speaker':
+        return <Speaker className="w-4 h-4" />
+      case 'tv':
+        return <Tv className="w-4 h-4" />
       default:
         return <Headphones className="w-4 h-4" />
     }
   }
 
   const transferToDevice = async (deviceId: string) => {
+    const spotifyApi = await getSpotifyApi()
     if (!spotifyApi) return
     
     try {
-      await spotifyApi.transferPlaybackToDevice(deviceId)
+      await spotifyApi.player.transferPlayback([deviceId], false)
       await loadDevices() // Aktualisiere die Geräteliste
     } catch (error) {
       console.error('Fehler beim Übertragen der Wiedergabe:', error)
@@ -206,7 +207,7 @@ export function SpotifyDeviceHelper({ spotifyApi, isPremium }: SpotifyDeviceHelp
                   )}
                   {!device.is_active && (
                     <button
-                      onClick={() => transferToDevice(device.id)}
+                      onClick={() => device.id && transferToDevice(device.id)}
                       className="text-xs text-accent hover:underline"
                     >
                       Aktivieren
