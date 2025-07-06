@@ -192,9 +192,9 @@ export default function DiscoveryAnalytics() {
 
   if (loading) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-black/20 backdrop-blur-sm border-white/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Search className="w-5 h-5" />
             Discovery Analytics
           </CardTitle>
@@ -210,9 +210,9 @@ export default function DiscoveryAnalytics() {
 
   if (error) {
     return (
-      <Card className="w-full">
+      <Card className="w-full bg-black/20 backdrop-blur-sm border-white/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Search className="w-5 h-5" />
             Discovery Analytics
           </CardTitle>
@@ -233,13 +233,13 @@ export default function DiscoveryAnalytics() {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
       {/* Discovery Overview */}
-      <Card className="w-full">
+      <Card className="w-full bg-black/20 backdrop-blur-sm border-white/10">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-white">
             <Search className="w-5 h-5" />
             Discovery Analytics
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-400">
             Analyse deiner Musik-Entdeckungsgewohnheiten
           </p>
         </CardHeader>
@@ -310,10 +310,10 @@ export default function DiscoveryAnalytics() {
       </Card>
 
       {/* Discovery Breakdown */}
-      <Card className="w-full">
+      <Card className="w-full bg-black/20 backdrop-blur-sm border-white/10">
         <CardHeader>
-          <CardTitle>Discovery Breakdown</CardTitle>
-          <p className="text-sm text-gray-600">
+          <CardTitle className="text-white">Discovery Breakdown</CardTitle>
+          <p className="text-sm text-gray-400">
             Verteilung deiner Hörgewohnheiten
           </p>
         </CardHeader>
@@ -344,10 +344,10 @@ export default function DiscoveryAnalytics() {
       </Card>
 
       {/* Vintage vs Modern */}
-      <Card className="w-full xl:col-span-2">
+      <Card className="w-full xl:col-span-2 bg-black/20 backdrop-blur-sm border-white/10">
         <CardHeader>
-          <CardTitle>Vintage vs Modern</CardTitle>
-          <p className="text-sm text-gray-600">
+          <CardTitle className="text-white">Vintage vs Modern</CardTitle>
+          <p className="text-sm text-gray-400">
             Verteilung nach Release-Zeiträumen
           </p>
         </CardHeader>
@@ -383,11 +383,11 @@ export default function DiscoveryAnalytics() {
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: COLORS[index % COLORS.length] }}
                     />
-                    <span className="text-sm font-medium">{item.period}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-bold">{item.count} Tracks</span>
-                    <p className="text-xs text-gray-400">{item.percentage.toFixed(1)}%</p>
+                                       <span className="text-sm font-medium text-white">{item.period}</span>
+                 </div>
+                 <div className="text-right">
+                   <span className="text-sm font-bold text-white">{item.count} Tracks</span>
+                   <p className="text-xs text-gray-400">{item.percentage.toFixed(1)}%</p>
                   </div>
                 </div>
               ))}
