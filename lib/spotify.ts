@@ -1,170 +1,181 @@
+import { SpotifyApi, AccessToken } from '@spotify/web-api-ts-sdk'
 import { getSession } from 'next-auth/react'
-import { 
-  SpotifyUser, 
-  SpotifyTopItem, 
-  SpotifyTrack, 
-  SpotifyArtist, 
-  RecentlyPlayedResponse,
-  SpotifyPlaylist
-} from '@/types/spotify'
+import type { Session } from 'next-auth'
 
-const SPOTIFY_API_BASE = 'https://api.spotify.com/v1'
+// Erweiterte Session Type für Spotify Token
+interface SpotifySession extends Session {
+  accessToken?: string
+  refreshToken?: string
+  tokenExpires?: number
+}
 
-export class SpotifyApi {
-  private accessToken: string
-  private requestCount: number = 0
-  private lastRequestTime: number = 0
-  private cache: Map<string, { data: any; timestamp: number }> = new Map()
-  private readonly CACHE_DURATION = 30 * 1000 // 30 Sekunden Cache
-
-  constructor(accessToken: string) {
-    this.accessToken = accessToken
-  }
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    // Cache check für GET requests
-    const cacheKey = `${endpoint}_${JSON.stringify(options)}`
-    const isGetRequest = !options.method || options.method === 'GET'
+// Custom Error Handler für bessere Fehlermeldungen
+class SpotifyErrorHandler {
+  public async handleErrors(error: any): Promise<boolean> {
+    console.error('Spotify API Error:', error)
     
-    if (isGetRequest) {
-      const cached = this.cache.get(cacheKey)
-      if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-        console.log(`Cache hit für: ${endpoint}`)
-        return cached.data
+    if (error.status === 401) {
+      // Token ist abgelaufen, löse Refresh-Event aus
+      window.dispatchEvent(new CustomEvent('spotify-token-refresh'))
+      return true // SDK soll error nicht weiter propagieren
+    }
+    
+    if (error.status === 403) {
+      const message = error.message || ''
+      if (message.includes('Premium')) {
+        throw new Error('Spotify Premium ist für diese Funktion erforderlich')
+      } else if (message.includes('scope')) {
+        throw new Error('Fehlende Berechtigung für diese Aktion')
+      } else {
+        throw new Error('Zugriff verweigert - möglicherweise sind zusätzliche Berechtigungen erforderlich')
       }
     }
-
-    // Rate limiting: Warte mindestens 100ms zwischen Requests
-    const now = Date.now()
-    const timeSinceLastRequest = now - this.lastRequestTime
-    if (timeSinceLastRequest < 100) {
-      await new Promise(resolve => setTimeout(resolve, 100 - timeSinceLastRequest))
+    
+    if (error.status === 404) {
+      if (error.url?.includes('/me/player')) {
+        throw new Error('Kein aktives Spotify-Gerät gefunden. Öffnen Sie Spotify auf einem Gerät und versuchen Sie es erneut.')
+      }
+      throw new Error('Ressource nicht gefunden')
     }
-    this.lastRequestTime = Date.now()
-    this.requestCount++
+    
+    if (error.status === 429) {
+      throw new Error('Zu viele Anfragen - bitte warten Sie einen Moment und versuchen Sie es erneut')
+    }
+    
+    return false // Lass das SDK den Fehler normal behandeln
+  }
+}
 
+// Custom Caching Strategy mit LocalStorage
+class SpotifyLocalStorageCache {
+  private readonly CACHE_PREFIX = 'spotify_cache_'
+  private readonly CACHE_DURATION = 30 * 1000 // 30 Sekunden
+
+  public async getOrCreate<T>(cacheKey: string, createFunction: () => Promise<T>): Promise<T> {
+    const cached = this.get<T>(cacheKey)
+    if (cached) {
+      return cached
+    }
+    
+    const fresh = await createFunction()
+    this.setCacheItem(cacheKey, fresh)
+    return fresh
+  }
+
+  public get<T>(cacheKey: string): T | null {
     try {
-      const response = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      })
-
-      // Token-Erneuerung bei 401
-      if (response.status === 401) {
-        console.log('Token ist abgelaufen, löse Refresh-Event aus')
-        window.dispatchEvent(new CustomEvent('spotify-token-refresh'))
-        throw new Error('Token ist abgelaufen')
-      }
-
-      // Detaillierte Fehlerbehandlung
-      if (!response.ok) {
-        let errorMessage = `Spotify API error: ${response.status}`
-        
-        try {
-          const errorBody = await response.text()
-          const errorData = errorBody ? JSON.parse(errorBody) : null
-          
-          if (response.status === 403) {
-            if (errorData?.error?.message?.includes('Premium')) {
-              throw new Error('Spotify Premium ist für diese Funktion erforderlich')
-            } else if (errorData?.error?.message?.includes('scope')) {
-              throw new Error('Fehlende Berechtigung für diese Aktion')
-            } else {
-              throw new Error('Zugriff verweigert - möglicherweise sind zusätzliche Berechtigungen erforderlich')
-            }
-          } else if (response.status === 404) {
-            if (endpoint.includes('/me/player')) {
-              throw new Error('Kein aktives Spotify-Gerät gefunden. Öffnen Sie Spotify auf einem Gerät und versuchen Sie es erneut.')
-            }
-            throw new Error('Ressource nicht gefunden')
-          } else if (response.status === 429) {
-            const retryAfter = parseInt(response.headers.get('Retry-After') || '1')
-            console.warn(`Rate limited, waiting ${retryAfter} seconds before retry...`)
-            
-            // Exponential backoff mit Maximum
-            const waitTime = Math.min(retryAfter * 1000, 5000) // Max 5 Sekunden
-            await new Promise(resolve => setTimeout(resolve, waitTime))
-            
-            // Cache leeren bei Rate Limiting
-            this.cache.clear()
-            
-            // Retry the request direkt ohne Rate Limiting
-            console.log('Retry request without rate limiting...')
-            
-            const response2 = await fetch(`${SPOTIFY_API_BASE}${endpoint}`, {
-              headers: {
-                'Authorization': `Bearer ${this.accessToken}`,
-                'Content-Type': 'application/json',
-                ...options.headers,
-              },
-              ...options,
-            })
-            
-            if (response2.ok) {
-              return await response2.json()
-            } else {
-              throw new Error(`Retry failed: ${response2.status}`)
-            }
-          }
-          
-          errorMessage = errorData?.error?.message || errorMessage
-        } catch (parseError) {
-          // Fallback falls JSON parsing fehlschlägt
-        }
-        
-        throw new Error(errorMessage)
-      }
-
-      // Leere Antworten (z.B. bei PUT/DELETE requests)
-      if (response.status === 204 || response.headers.get('content-length') === '0') {
-        return {} as T
-      }
-
-      // Prüfe ob Response überhaupt JSON Content hat
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        // Für non-JSON Antworten (z.B. leere Player-Responses)
-        const text = await response.text()
-        if (!text || text.trim() === '') {
-          return {} as T
-        }
-        // Falls doch Text vorhanden ist, logge ihn für Debugging
-        console.warn('Non-JSON Response:', text)
-        return {} as T
-      }
-
-      const data = await response.json()
+      const item = localStorage.getItem(this.CACHE_PREFIX + cacheKey)
+      if (!item) return null
       
-      // Cache für GET requests speichern
-      if (isGetRequest) {
-        this.cache.set(cacheKey, { data, timestamp: Date.now() })
+      const parsed = JSON.parse(item)
+      const now = Date.now()
+      
+      if (now - parsed.timestamp > this.CACHE_DURATION) {
+        this.remove(cacheKey)
+        return null
       }
       
-      return data
-    } catch (error: any) {
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Netzwerkfehler - prüfen Sie Ihre Internetverbindung')
-      }
-      throw error
+      return parsed.data
+    } catch {
+      this.remove(cacheKey)
+      return null
     }
   }
 
-  // Token-Validierung
-  async validateToken(): Promise<boolean> {
+  public setCacheItem<T>(cacheKey: string, item: T): void {
     try {
-      await this.getCurrentUser()
-      return true
+      const cacheItem = {
+        data: item,
+        timestamp: Date.now()
+      }
+      localStorage.setItem(this.CACHE_PREFIX + cacheKey, JSON.stringify(cacheItem))
     } catch (error) {
-      console.error('Token-Validierung fehlgeschlagen:', error)
-      return false
+      console.warn('Cache storage failed:', error)
     }
   }
 
-  // Premium-Status prüfen
+  public remove(cacheKey: string): void {
+    localStorage.removeItem(this.CACHE_PREFIX + cacheKey)
+  }
+
+  public clearAll(): void {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(this.CACHE_PREFIX)) {
+        localStorage.removeItem(key)
+      }
+    })
+  }
+}
+
+// Spotify API Wrapper Class
+export class SpotifyApiWrapper {
+  private sdk: SpotifyApi | null = null
+  private cache: SpotifyLocalStorageCache
+  private requestCount: number = 0
+
+  constructor() {
+    this.cache = new SpotifyLocalStorageCache()
+  }
+
+  // SDK mit aktuellem Access Token initialisieren
+  private async initializeSdk(): Promise<SpotifyApi> {
+    const session = await getSession() as SpotifySession
+    
+    if (!session?.accessToken) {
+      throw new Error('Keine Spotify-Authentifizierung gefunden')
+    }
+
+    // Access Token Object mit korrekten Typen
+    const accessToken: AccessToken = {
+      access_token: session.accessToken,
+      token_type: 'Bearer',
+      expires_in: 3600,
+      refresh_token: session.refreshToken || ''
+    }
+
+    // SDK mit Access Token - keine Custom Config
+    this.sdk = SpotifyApi.withAccessToken(
+      process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
+      accessToken
+    )
+
+    return this.sdk
+  }
+
+  // SDK-Instanz abrufen oder erstellen
+  private async getSdk(): Promise<SpotifyApi> {
+    if (!this.sdk) {
+      this.sdk = await this.initializeSdk()
+    }
+    return this.sdk
+  }
+
+  // Token erneuern
+  public async refreshSdk(): Promise<void> {
+    this.cache.clearAll() // Cache leeren bei Token-Refresh
+    this.sdk = null // SDK neu initialisieren
+  }
+
+  // Rate Limiting
+  private async rateLimit(): Promise<void> {
+    if (this.requestCount > 0) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    this.requestCount++
+  }
+
+  // ==========================================================================
+  // PUBLIC API METHODS - Mit korrekten SDK-Typen
+  // ==========================================================================
+
+  // User Profile
+  async getCurrentUser() {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.profile()
+  }
+
+  // Premium Status Check
   async checkPremiumStatus(): Promise<boolean> {
     try {
       const user = await this.getCurrentUser()
@@ -175,236 +186,281 @@ export class SpotifyApi {
     }
   }
 
-  // Benutzer-Profil
-  async getCurrentUser() {
-    return this.request<SpotifyUser>('/me')
+  // Top Items - Mit SDK-konformen Typen
+  async getTopTracks(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: 20 | 50 = 20) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.topItems('tracks', timeRange, limit)
   }
 
-  // Top Items
-  async getTopTracks(timeRange: string = 'medium_term', limit: number = 20) {
-    return this.request<SpotifyTopItem>(`/me/top/tracks?time_range=${timeRange}&limit=${limit}`)
+  async getTopArtists(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', limit: 20 | 50 = 20) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.topItems('artists', timeRange, limit)
   }
 
-  async getTopArtists(timeRange: string = 'medium_term', limit: number = 20) {
-    return this.request<SpotifyTopItem>(`/me/top/artists?time_range=${timeRange}&limit=${limit}`)
+  // Recently Played - Mit korrektem Typ
+  async getRecentlyPlayed(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 50) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.getRecentlyPlayedTracks(limit)
   }
 
-  // Kürzlich gespielt
-  async getRecentlyPlayed(limit: number = 50) {
-    return this.request<RecentlyPlayedResponse>(`/me/player/recently-played?limit=${limit}`)
+  // Saved Content - Mit SDK-konformen Limits
+  async getSavedTracks(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.tracks.savedTracks(limit, offset)
   }
 
-  // Gefolgte Künstler
-  async getFollowedArtists() {
-    return this.request<{ artists: { items: SpotifyArtist[] } }>('/me/following?type=artist&limit=50')
+  async getSavedAlbums(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.albums.savedAlbums(limit, offset)
   }
 
-  // Suche
-  async search(query: string, type: string = 'track', limit: number = 20) {
-    const encodedQuery = encodeURIComponent(query)
-    return this.request(`/search?q=${encodedQuery}&type=${type}&limit=${limit}`)
+  async getSavedShows(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.shows.savedShows(limit, offset)
   }
 
-  // Geräte-Verwaltung (Web API)
-  async getAvailableDevices(): Promise<any[]> {
-    try {
-      const response = await this.request<{ devices: any[] }>('/me/player/devices')
-      return response.devices
-    } catch (error) {
-      console.error('Fehler beim Abrufen der Geräte:', error)
-      return []
-    }
+  // Following
+  async getFollowedArtists(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.followedArtists(limit)
   }
 
-  async transferPlaybackToDevice(deviceId: string): Promise<void> {
-    try {
-      await this.request('/me/player', {
-        method: 'PUT',
-        body: JSON.stringify({
-          device_ids: [deviceId],
-          play: false
-        })
-      })
-      console.log('Playback transferred to device:', deviceId)
-    } catch (error) {
-      console.error('Fehler beim Übertragen der Wiedergabe:', error)
-      throw error
-    }
+  // Playlists
+  async getCurrentUserPlaylists(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.currentUser.playlists.playlists(limit, offset)
   }
 
-  // Playback Control (nur Web API)
-  async playTrack(uri: string, deviceId?: string): Promise<void> {
-    try {
-      console.log('Starte Wiedergabe für URI:', uri, deviceId ? `auf Gerät: ${deviceId}` : '')
-      
-      // Baue Endpoint mit device_id Parameter falls vorhanden
-      const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play'
-      
-      await this.request(endpoint, {
-        method: 'PUT',
-        body: JSON.stringify({
-          uris: [uri]
-        })
-      })
-      
-      console.log('Wiedergabe erfolgreich gestartet')
-    } catch (error: any) {
-      console.error('Fehler beim Abspielen des Tracks:', error)
-      
-      // Ignoriere JSON-Parsing-Fehler bei erfolgreichen Play-Requests
-      if (error.message?.includes('Unexpected token') || error.message?.includes('not valid JSON')) {
-        console.log('Track-Wiedergabe erfolgreich (JSON-Parsing-Fehler ignoriert)')
-        return
-      }
-      
-      // Spezifische Fehlerbehandlung für Player-Endpunkt
-      if (error.message.includes('404')) {
-        throw new Error('Kein aktives Spotify-Gerät gefunden. Öffnen Sie Spotify auf einem Gerät und versuchen Sie es erneut.')
-      } else if (error.message.includes('403')) {
-        throw new Error('Spotify Premium ist für die Wiedergabe erforderlich.')
-      } else if (error.message.includes('Premium')) {
-        throw new Error('Diese Funktion erfordert Spotify Premium.')
-      }
-      
-      throw error
-    }
+  async getPlaylist(playlistId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.playlists.getPlaylist(playlistId)
   }
 
-  async pausePlayback(deviceId?: string): Promise<void> {
-    try {
-      const endpoint = deviceId ? `/me/player/pause?device_id=${deviceId}` : '/me/player/pause'
-      await this.request(endpoint, {
-        method: 'PUT'
-      })
-      console.log('Wiedergabe pausiert', deviceId ? `auf Gerät: ${deviceId}` : '')
-    } catch (error: any) {
-      console.error('Fehler beim Pausieren:', error)
-      // Ignoriere JSON-Parsing-Fehler bei erfolgreichen Pause-Requests
-      if (error.message?.includes('Unexpected token') || error.message?.includes('not valid JSON')) {
-        console.log('Pause erfolgreich (JSON-Parsing-Fehler ignoriert)')
-        return
-      }
-      throw error
-    }
+  async getPlaylistTracks(playlistId: string, limit: number = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    // Type assertion für strikt typisiertes SDK
+    return await sdk.playlists.getPlaylistItems(playlistId, undefined, undefined, limit as any, offset)
   }
 
-  async resumePlayback(deviceId?: string): Promise<void> {
-    try {
-      const endpoint = deviceId ? `/me/player/play?device_id=${deviceId}` : '/me/player/play'
-      await this.request(endpoint, {
-        method: 'PUT'
-      })
-      console.log('Wiedergabe fortgesetzt', deviceId ? `auf Gerät: ${deviceId}` : '')
-    } catch (error: any) {
-      console.error('Fehler beim Fortsetzen:', error)
-      // Ignoriere JSON-Parsing-Fehler bei erfolgreichen Play-Requests
-      if (error.message?.includes('Unexpected token') || error.message?.includes('not valid JSON')) {
-        console.log('Resume erfolgreich (JSON-Parsing-Fehler ignoriert)')
-        return
-      }
-      throw error
-    }
+  // Search
+  async search(query: string, types: ('track' | 'artist' | 'album' | 'playlist')[] = ['track'], limit: number = 20) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    // Type assertion für market und limit Parameter
+    return await sdk.search(query, types, 'DE' as any, limit as any)
   }
 
-  // Player-Status abfragen
-  async getCurrentPlaybackState(): Promise<any> {
-    try {
-      return await this.request<any>('/me/player')
-    } catch (error) {
-      console.error('Fehler beim Abrufen des Playback-Status:', error)
-      return null
-    }
+  // Player Methods
+  async getAvailableDevices() {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.getAvailableDevices()
   }
 
-  // Check if currently playing
+  async getCurrentPlaybackState() {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.getPlaybackState()
+  }
+
+  async getCurrentlyPlayingTrack() {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.getCurrentlyPlayingTrack()
+  }
+
+  async transferPlaybackToDevice(deviceId: string, play: boolean = false) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.transferPlayback([deviceId], play)
+  }
+
+  // Player Control - Mit korrekten required parameters
+  async playTrack(uri: string, deviceId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.startResumePlayback(deviceId, undefined, [uri])
+  }
+
+  async pausePlayback(deviceId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.pausePlayback(deviceId)
+  }
+
+  async resumePlayback(deviceId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.player.startResumePlayback(deviceId)
+  }
+
+  // Content Details
+  async getTrackDetails(trackId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.tracks.get(trackId)
+  }
+
+  async getArtistDetails(artistId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.artists.get(artistId)
+  }
+
+  async getAlbumDetails(albumId: string) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.albums.get(albumId)
+  }
+
+  // Browse - Mit SDK-konformen Limits
+  async getNewReleases(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 20, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.browse.getNewReleases('DE', limit, offset)
+  }
+
+  async getCategories(limit: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 | 48 | 49 | 50 = 50, offset: number = 0) {
+    await this.rateLimit()
+    const sdk = await this.getSdk()
+    return await sdk.browse.getCategories('DE', limit, offset)
+  }
+
+  // Utility Methods
   async isCurrentlyPlaying(trackId: string): Promise<boolean> {
     try {
-      const state = await this.getCurrentPlaybackState()
-      return state?.item?.id === trackId && state?.is_playing === true
+      const currentTrack = await this.getCurrentlyPlayingTrack()
+      return currentTrack?.item?.id === trackId && currentTrack?.is_playing
     } catch (error) {
+      console.error('Fehler beim Prüfen des aktuellen Tracks:', error)
       return false
     }
   }
 
-  // Detaillierte Track-Informationen
-  async getTrackDetails(trackId: string) {
+  async validateToken(): Promise<boolean> {
     try {
-      return await this.request(`/tracks/${trackId}`)
-    } catch (error: any) {
-      console.error('Track Details konnten nicht geladen werden:', error.message)
-      throw error
+      await this.getCurrentUser()
+      return true
+    } catch (error) {
+      console.error('Token-Validierung fehlgeschlagen:', error)
+      return false
     }
   }
 
-  // Einfache Playback-Kontrolle nur für Analytics (einzelne Tracks)
-  async getCurrentPlayback(): Promise<any> {
-    return this.request<any>('/me/player')
+  // Convenience Methods mit größeren Limits (mehrere Calls)
+  async getTopTracksExtended(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', targetLimit: number = 50) {
+    const results = []
+    let offset = 0
+    const batchSize = 20 // SDK Maximum
+
+    while (results.length < targetLimit && offset < 100) { // Spotify API Maximum ist meist 100
+      const batch = await this.getTopTracks(timeRange, batchSize)
+      results.push(...batch.items)
+      
+      if (batch.items.length < batchSize) break // Keine weiteren Ergebnisse
+      offset += batchSize
+    }
+
+    return {
+      items: results.slice(0, targetLimit),
+      total: results.length,
+      limit: targetLimit,
+      offset: 0
+    }
   }
 
+  async getTopArtistsExtended(timeRange: 'short_term' | 'medium_term' | 'long_term' = 'medium_term', targetLimit: number = 50) {
+    const results = []
+    let offset = 0
+    const batchSize = 20
 
+    while (results.length < targetLimit && offset < 100) {
+      const batch = await this.getTopArtists(timeRange, batchSize)
+      results.push(...batch.items)
+      
+      if (batch.items.length < batchSize) break
+      offset += batchSize
+    }
 
-  // Genre Seeds API deprecated - entfernt
+    return {
+      items: results.slice(0, targetLimit),
+      total: results.length,
+      limit: targetLimit,
+      offset: 0
+    }
+  }
 }
 
-export async function getSpotifyApi(): Promise<SpotifyApi | null> {
-  const session = await getSession()
-  
-  if (!session?.accessToken) {
-    console.warn('Keine Access Token in der Session gefunden')
+// Singleton Pattern
+let spotifyApiInstance: SpotifyApiWrapper | null = null
+
+export async function getSpotifyApi(): Promise<SpotifyApiWrapper | null> {
+  try {
+    if (!spotifyApiInstance) {
+      spotifyApiInstance = new SpotifyApiWrapper()
+    }
+    return spotifyApiInstance
+  } catch (error) {
+    console.error('Fehler beim Erstellen der Spotify API Instanz:', error)
     return null
   }
-
-  const api = new SpotifyApi(session.accessToken)
-  
-  // Validiere Token vor Rückgabe
-  const isValid = await api.validateToken()
-  if (!isValid) {
-    console.warn('Access Token ist ungültig')
-    return null
-  }
-
-  return api
 }
+
+// Token Refresh Event Handler
+if (typeof window !== 'undefined') {
+  window.addEventListener('spotify-token-refresh', async () => {
+    if (spotifyApiInstance) {
+      await spotifyApiInstance.refreshSdk()
+    }
+  })
+}
+
+// ==========================================================================
+// UTILITY FUNCTIONS (Behalten aus der alten Implementation)
+// ==========================================================================
 
 export function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  const minutes = Math.floor(ms / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 export function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
-  }
-  return num.toString()
+  return new Intl.NumberFormat('de-DE').format(num)
 }
 
 export function getTimeRangeLabel(timeRange: string): string {
   switch (timeRange) {
-    case 'short_term':
-      return 'Letzte 4 Wochen'
-    case 'medium_term':
-      return 'Letzte 6 Monate'
-    case 'long_term':
-      return 'Gesamte Zeit'
-    default:
-      return 'Letzte 6 Monate'
+    case 'short_term': return 'Letzte 4 Wochen'
+    case 'medium_term': return 'Letzte 6 Monate'
+    case 'long_term': return 'Letztes Jahr'
+    default: return 'Unbekannt'
   }
 }
 
 export function getAudioFeatureLabel(feature: string): string {
-  const labels: Record<string, string> = {
-    danceability: 'Tanzbarkeit',
-    energy: 'Energie',
-    speechiness: 'Sprachanteil',
-    acousticness: 'Akustik',
-    instrumentalness: 'Instrumentalität',
-    liveness: 'Live-Charakter',
-    valence: 'Positivität',
-    tempo: 'Tempo (BPM)'
+  switch (feature) {
+    case 'acousticness': return 'Akustik'
+    case 'danceability': return 'Tanzbarkeit'
+    case 'energy': return 'Energie'
+    case 'instrumentalness': return 'Instrumental'
+    case 'liveness': return 'Live-Charakter'
+    case 'speechiness': return 'Sprach-Anteil'
+    case 'valence': return 'Positivität'
+    default: return feature
   }
-  return labels[feature] || feature
-} 
+}
+
+// Legacy Support - Export der Klasse für bestehenden Code
+export { SpotifyApiWrapper as SpotifyApi }
+export default SpotifyApiWrapper 
