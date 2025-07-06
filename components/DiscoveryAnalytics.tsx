@@ -336,17 +336,21 @@ export default function DiscoveryAnalytics() {
                  />
                  <Tooltip 
                    formatter={(value, name) => [
-                     `${value} (${discoveryData.find(d => d.count === value)?.percentage.toFixed(1)}%)`,
-                     name
+                     `${value} (${discoveryData.find(d => d.count === value)?.percentage.toFixed(1)}%)`
                    ]}
+                   labelFormatter={(label) => label}
                    contentStyle={{
-                     backgroundColor: '#000000',
-                     border: '2px solid #ffffff',
-                     borderRadius: '8px',
+                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                     border: '1px solid rgba(255, 255, 255, 0.3)',
+                     borderRadius: '6px',
                      color: '#ffffff',
-                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                     fontSize: '12px',
+                     padding: '8px 12px',
+                     minWidth: 'auto',
+                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                    }}
-                   labelStyle={{ color: '#ffffff' }}
+                   labelStyle={{ color: '#ffffff', fontSize: '12px' }}
+                   itemStyle={{ color: '#ffffff', fontSize: '12px' }}
                  />
                  <Bar dataKey="count" fill="#8884d8" />
                </BarChart>
@@ -384,17 +388,21 @@ export default function DiscoveryAnalytics() {
                      </Pie>
                      <Tooltip 
                        formatter={(value, name, props) => [
-                         `${value} Tracks (${props.payload.percentage.toFixed(1)}%)`,
-                         props.payload.period
+                         `${value} Tracks (${props.payload.percentage.toFixed(1)}%)`
                        ]}
+                       labelFormatter={(label) => ''}
                        contentStyle={{
-                         backgroundColor: '#000000',
-                         border: '2px solid #ffffff',
-                         borderRadius: '8px',
+                         backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                         border: '1px solid rgba(255, 255, 255, 0.3)',
+                         borderRadius: '6px',
                          color: '#ffffff',
-                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                         fontSize: '12px',
+                         padding: '8px 12px',
+                         minWidth: 'auto',
+                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                        }}
-                       labelStyle={{ color: '#ffffff' }}
+                       itemStyle={{ color: '#ffffff', fontSize: '12px' }}
+                       cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
                      />
                    </PieChart>
                  </ResponsiveContainer>
