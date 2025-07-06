@@ -340,11 +340,13 @@ export default function DiscoveryAnalytics() {
                      name
                    ]}
                    contentStyle={{
-                     backgroundColor: '#1f2937',
-                     border: '1px solid #374151',
+                     backgroundColor: '#000000',
+                     border: '2px solid #ffffff',
                      borderRadius: '8px',
-                     color: '#ffffff'
+                     color: '#ffffff',
+                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
                    }}
+                   labelStyle={{ color: '#ffffff' }}
                  />
                  <Bar dataKey="count" fill="#8884d8" />
                </BarChart>
@@ -386,11 +388,13 @@ export default function DiscoveryAnalytics() {
                          props.payload.period
                        ]}
                        contentStyle={{
-                         backgroundColor: '#1f2937',
-                         border: '1px solid #374151',
+                         backgroundColor: '#000000',
+                         border: '2px solid #ffffff',
                          borderRadius: '8px',
-                         color: '#ffffff'
+                         color: '#ffffff',
+                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
                        }}
+                       labelStyle={{ color: '#ffffff' }}
                      />
                    </PieChart>
                  </ResponsiveContainer>
