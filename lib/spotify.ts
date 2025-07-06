@@ -31,6 +31,12 @@ export async function getSpotifyApi(): Promise<SpotifyApi | null> {
 
     // Erstelle neue SDK-Instanz wenn nötig
     if (!spotifyApiInstance) {
+      const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID
+      if (!clientId) {
+        console.error('NEXT_PUBLIC_SPOTIFY_CLIENT_ID ist nicht gesetzt')
+        return null
+      }
+
       const accessToken: AccessToken = {
         access_token: session.accessToken,
         token_type: 'Bearer',
@@ -39,10 +45,7 @@ export async function getSpotifyApi(): Promise<SpotifyApi | null> {
       }
 
       // Verwende das offizielle SDK direkt
-      spotifyApiInstance = SpotifyApi.withAccessToken(
-        process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID!,
-        accessToken
-      )
+      spotifyApiInstance = SpotifyApi.withAccessToken(clientId, accessToken)
     }
 
     return spotifyApiInstance
