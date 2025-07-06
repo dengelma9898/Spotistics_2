@@ -12,6 +12,7 @@ import ArtistFrequencyChart from '@/components/ArtistFrequencyChart'
 import GenreDistribution from '@/components/GenreDistribution'
 import RecentlyPlayedTimeline from '@/components/RecentlyPlayedTimeline'
 import DailyListeningHeatmap from '@/components/DailyListeningHeatmap'
+import GenreEvolutionChart from '@/components/GenreEvolutionChart'
 import { BackgroundGradient } from '@/components/ui/background-gradient'
 import { TrendingUp, Music, Calendar, Users, Loader2, Clock, Activity, BarChart3 } from 'lucide-react'
 
@@ -228,6 +229,11 @@ export default function AnalyticsPage() {
                   
                   {/* Genre Distribution */}
                   <GenreDistribution tracks={tracks} artists={artists} />
+                  
+                  {/* Genre Evolution Chart */}
+                  <div className="xl:col-span-2">
+                    <GenreEvolutionChart />
+                  </div>
                   
                   {/* Release Date Timeline */}
                   <div className="xl:col-span-2">
