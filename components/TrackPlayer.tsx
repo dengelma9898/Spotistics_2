@@ -1,16 +1,17 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Music, ExternalLink, Info } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { SpotifyTrack } from '@/types/spotify'
 import { formatDuration } from '@/lib/spotify'
-import { SpotifyApi } from '@/lib/spotify'
+import { SpotifyApiWrapper } from '@/lib/spotify'
+import { Track } from '@spotify/web-api-ts-sdk'
 
 interface TrackPlayerProps {
-  track: SpotifyTrack
-  rank: number
-  spotifyApi?: SpotifyApi | null
+  track: SpotifyTrack | Track
+  rank?: number
+  spotifyApi?: SpotifyApiWrapper | null
   isPremium?: boolean
   selectedDeviceId?: string | null
 }
@@ -58,11 +59,16 @@ export function TrackPlayer({ track, rank, spotifyApi, isPremium = false, select
 
       if (isPremium && spotifyApi) {
         // Premium: Nutze Web API für vollständige Tracks mit Device-ID
+        if (!selectedDeviceId) {
+          setError('Bitte wähle ein Gerät aus')
+          return
+        }
+        
         if (isPlaying) {
-          await spotifyApi.pausePlayback(selectedDeviceId || undefined)
+          await spotifyApi.pausePlayback(selectedDeviceId)
           setIsPlaying(false)
         } else {
-          await spotifyApi.playTrack(track.uri || `spotify:track:${track.id}`, selectedDeviceId || undefined)
+          await spotifyApi.playTrack(track.uri || `spotify:track:${track.id}`, selectedDeviceId)
           setIsPlaying(true)
         }
       } else {

@@ -33,7 +33,7 @@ import { Spotlight } from '@/components/ui/spotlight'
 import { useToast, ToastContainer } from '@/components/ui/toast'
 import { motion } from 'motion/react'
 
-import { SpotifyApi } from '@/lib/spotify'
+import { getSpotifyApi, SpotifyApiWrapper } from '@/lib/spotify'
 import { 
   SpotifyUser, 
   SpotifyTopItem, 
@@ -50,7 +50,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timeRange, setTimeRange] = useState<'short_term' | 'medium_term' | 'long_term'>('medium_term')
-  const [spotifyApi, setSpotifyApi] = useState<SpotifyApi | null>(null)
+  const [spotifyApi, setSpotifyApi] = useState<SpotifyApiWrapper | null>(null)
   const [isPremium, setIsPremium] = useState<boolean>(false)
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState<boolean>(false)
@@ -110,7 +110,7 @@ export default function DashboardPage() {
       setLoading(true)
       setError(null)
       
-      const api = new SpotifyApi(session.accessToken)
+              const api = await getSpotifyApi()
       
       // Token validieren
       const isValid = await api.validateToken()
