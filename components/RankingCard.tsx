@@ -102,13 +102,13 @@ export function RankingCard({
       const popularityLevel = popularity >= 70 ? 'Weltstar' : popularity >= 50 ? 'Bekannter Artist' : popularity >= 30 ? 'Aufsteiger' : 'Underground'
       const followerLevel = followerCount >= 10000000 ? 'Mega-Star' : followerCount >= 1000000 ? 'Sehr bekannt' : followerCount >= 100000 ? 'Bekannt' : 'Newcomer'
       
-              return {
-          title: "Was bedeuten diese Zahlen?",
-          description: `👥 Followers: ${followerCount.toLocaleString()} (${followerLevel})
+      return {
+        title: "Was bedeuten diese Zahlen?",
+        description: `👥 Followers: ${followerCount.toLocaleString()} (${followerLevel})
 🔥 Popularität: ${popularity}/100 (${popularityLevel})  
 📊 Spotify misst Popularität durch aktuelle Streams aller Songs des Artists.
 ⭐ Du hörst ${artist.name} besonders oft - deshalb Platz ${rank} in deinen Top Artists!`
-        }
+      }
     }
   }
 
@@ -128,7 +128,9 @@ export function RankingCard({
     }
   }
 
-
+  const handleTooltipToggle = (show: boolean) => {
+    setShowTooltip(show)
+  }
 
   const imageUrl = type === 'track' 
     ? (item as SpotifyTrack).album.images?.[0]?.url 
@@ -146,7 +148,6 @@ export function RankingCard({
           : 'hover:scale-103 hover:translateY(-2px) bg-white/5'
         }
         ${isCurrentlyPlaying ? 'ring-2 ring-blue-400' : ''}
-        ${showTooltip ? 'z-[9998]' : 'z-10'}
       `}
       style={getPodiumStyle()}
     >
@@ -157,8 +158,6 @@ export function RankingCard({
 
       {/* Action Buttons */}
       <div className="absolute top-4 right-4 flex gap-2">
-
-
         {/* Track Details Button (nur für Tracks) */}
         {type === 'track' && (
           <button
@@ -172,26 +171,28 @@ export function RankingCard({
         
         {/* Context Info Button */}
         {showContext && (
-          <button
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            className="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all"
-          >
-            <Info className="w-4 h-4 text-blue-400" />
-          </button>
+          <div className="relative">
+            <button
+              onMouseEnter={() => handleTooltipToggle(true)}
+              onMouseLeave={() => handleTooltipToggle(false)}
+              className="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all"
+            >
+              <Info className="w-4 h-4 text-blue-400" />
+            </button>
+            
+            {/* Tooltip */}
+            {showTooltip && (
+              <div className="absolute top-12 right-0 w-96 p-5 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-[9999] max-h-96 overflow-y-auto pointer-events-none">
+                <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-blue-400" />
+                  {contextInfo.title}
+                </h4>
+                <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{contextInfo.description}</div>
+              </div>
+            )}
+          </div>
         )}
       </div>
-
-      {/* Tooltip */}
-      {showContext && showTooltip && (
-                      <div className="absolute top-16 right-4 w-96 p-5 bg-gray-900/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-[9999] max-h-96 overflow-y-auto">
-          <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-            <Info className="w-4 h-4 text-blue-400" />
-            {contextInfo.title}
-          </h4>
-          <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{contextInfo.description}</div>
-        </div>
-      )}
 
       <div className="flex items-center gap-4">
         {/* Cover/Image */}
@@ -277,8 +278,6 @@ export function RankingCard({
           }}
         />
       )}
-
-
     </div>
   )
 } 
