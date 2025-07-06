@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Tooltip } from '@/components/ui/tooltip'
 import { Music, Users, Calendar, TrendingUp, Clock, Star } from 'lucide-react'
 
 interface LibraryOverviewProps {
@@ -102,20 +103,24 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">Gesamtscore</span>
-                  <div className="group relative">
+                  <Tooltip
+                    content={
+                      <div>
+                        <div className="font-semibold mb-1">Health Score Berechnung:</div>
+                        <div className="space-y-1">
+                          <div>• Basis: 85%</div>
+                          <div>• Abzug pro Duplikat: -1%</div>
+                          <div>• Bonus für Vielfalt: +5%</div>
+                          <div>• Bonus für Aktivität: +10%</div>
+                        </div>
+                      </div>
+                    }
+                    position="bottom"
+                  >
                     <div className="w-4 h-4 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                       ?
                     </div>
-                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-3 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-64 pointer-events-none">
-                      <div className="font-semibold mb-1">Health Score Berechnung:</div>
-                      <div className="space-y-1">
-                        <div>• Basis: 85%</div>
-                        <div>• Abzug pro Duplikat: -1%</div>
-                        <div>• Bonus für Vielfalt: +5%</div>
-                        <div>• Bonus für Aktivität: +10%</div>
-                      </div>
-                    </div>
-                  </div>
+                  </Tooltip>
                 </div>
                 <span className="text-2xl font-bold text-green-400">
                   {Math.round(85 - (stats.duplicatesCount / stats.totalTracks) * 100)}%
@@ -178,42 +183,42 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Diesen Monat</span>
-                <div className="group relative">
+                <Tooltip
+                  content={`Tracks hinzugefügt in ${new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`}
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Tracks hinzugefügt in {new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">{thisMonth}</span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Letzten Monat</span>
-                <div className="group relative">
+                <Tooltip
+                  content={`Tracks hinzugefügt in ${new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`}
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Tracks hinzugefügt in {new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">{lastMonth}</span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Trend</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Veränderung gegenüber dem Vormonat"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Veränderung gegenüber dem Vormonat
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <Badge variant={activityTrend >= 0 ? 'default' : 'destructive'}>
                 {activityTrend >= 0 ? '+' : ''}{activityTrend}
@@ -242,28 +247,28 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Gesamtdauer</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Gesamte Spielzeit aller gespeicherten Tracks"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Gesamte Spielzeit aller gespeicherten Tracks
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">{stats.totalDurationHours}h</span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Ø pro Track</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Durchschnittliche Länge pro Track"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Durchschnittliche Länge pro Track
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">
                 {Math.round((stats.totalDurationHours * 60) / stats.totalTracks)}min
@@ -272,14 +277,14 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Ø Popularität</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Spotify Popularitäts-Score (0-100). Höher = populärer"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Spotify Popularitäts-Score (0-100). Höher = populärer
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">{stats.avgPopularity}%</span>
             </div>
@@ -307,28 +312,28 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Einzigartige Artists</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Anzahl verschiedener Artists in Ihrer Library"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Anzahl verschiedener Artists in Ihrer Library
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">{stats.uniqueArtists}</span>
             </div>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Tracks pro Artist</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Durchschnittliche Anzahl Tracks pro Artist. Niedriger = vielfältiger"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Durchschnittliche Anzahl Tracks pro Artist. Niedriger = vielfältiger
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium">
                 ⌀ {Math.round(stats.totalTracks / stats.uniqueArtists)}
@@ -337,14 +342,14 @@ export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithI
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Vielfalt-Score</span>
-                <div className="group relative">
+                <Tooltip
+                  content="Prozent einzigartiger Artists. Höher = vielfältiger"
+                  position="bottom"
+                >
                   <div className="w-3 h-3 bg-gray-600 rounded-full flex items-center justify-center text-xs text-white cursor-help hover:bg-gray-500 transition-colors">
                     ?
                   </div>
-                  <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg p-2 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 w-48 pointer-events-none">
-                    Prozent einzigartiger Artists. Höher = vielfältiger
-                  </div>
-                </div>
+                </Tooltip>
               </div>
               <span className="font-medium text-blue-400">
                 {Math.round((stats.uniqueArtists / stats.totalTracks) * 100)}%
