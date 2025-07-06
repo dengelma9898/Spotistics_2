@@ -1,6 +1,6 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Music, Users, Calendar, TrendingUp, Clock, Star } from 'lucide-react'
@@ -22,20 +22,26 @@ interface LibraryOverviewProps {
   tracks: any[]
   albums: any[]
   playlists: any[]
+  artistsWithImages: Map<string, any>
 }
 
-export function LibraryOverview({ stats, tracks, albums, playlists }: LibraryOverviewProps) {
+export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithImages }: LibraryOverviewProps) {
   // Berechne Top Artists basierend auf Track-Anzahl
   const artistCounts = new Map()
   tracks.forEach(savedTrack => {
     savedTrack.track.artists.forEach((artist: any) => {
       const existing = artistCounts.get(artist.id)
+      const artistWithImage = artistsWithImages.get(artist.id)
+      
       artistCounts.set(artist.id, {
         name: artist.name,
         count: (existing?.count || 0) + 1,
-        // Nutze das erste verfügbare Bild oder Placeholder
-        image: existing?.image || artist.images?.[0]?.url || '/placeholder-artist.png',
-        id: artist.id
+        // Nutze das geladene Bild oder Fallback
+        image: artistWithImage?.image || '/placeholder-artist.png',
+        id: artist.id,
+        popularity: artistWithImage?.popularity || 0,
+        followers: artistWithImage?.followers || 0,
+        genres: artistWithImage?.genres || []
       })
     })
   })
@@ -368,13 +374,32 @@ export function LibraryOverview({ stats, tracks, albums, playlists }: LibraryOve
               {topArtists.map((artist, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm">
+                    {artist.image !== '/placeholder-artist.png' ? (
+                      <img 
+                        src={artist.image}
+                        alt={artist.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white font-bold text-sm ${artist.image !== '/placeholder-artist.png' ? 'hidden' : ''}`}>
                       {artist.name.charAt(0).toUpperCase()}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{artist.name}</p>
-                    <p className="text-sm text-gray-400">{artist.count} Tracks</p>
+                    <p className="text-sm text-gray-400">
+                      {artist.count} Tracks
+                      {artist.followers > 0 && (
+                        <span className="ml-2 text-xs">
+                          • {(artist.followers / 1000000).toFixed(1)}M Follower
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <Badge variant="secondary">
                     #{index + 1}

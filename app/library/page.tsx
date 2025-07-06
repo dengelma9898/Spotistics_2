@@ -8,7 +8,8 @@ import {
   getAllUserPlaylists,
   calculateLibraryStats,
   analyzeLibraryGrowth,
-  findDuplicateTracks
+  findDuplicateTracks,
+  getArtistsWithImages
 } from '@/lib/spotify'
 import { Header } from '@/components/Header'
 import { StatCard } from '@/components/StatCard'
@@ -47,11 +48,13 @@ export default function LibraryPage() {
   const [stats, setStats] = useState<LibraryStats | null>(null)
   const [growthData, setGrowthData] = useState<any[]>([])
   const [duplicates, setDuplicates] = useState<any[]>([])
+  const [artistsWithImages, setArtistsWithImages] = useState<Map<string, any>>(new Map())
   
   // Loading States
   const [loadingTracks, setLoadingTracks] = useState(false)
   const [loadingAlbums, setLoadingAlbums] = useState(false)
   const [loadingPlaylists, setLoadingPlaylists] = useState(false)
+  const [loadingArtists, setLoadingArtists] = useState(false)
 
   useEffect(() => {
     if (session?.accessToken) {
@@ -86,6 +89,11 @@ export default function LibraryPage() {
       setStats(libraryStats)
       setGrowthData(growth)
       setDuplicates(duplicatesList)
+      
+      // Lade Artist-Bilder separat
+      if (finalTracks.length > 0) {
+        loadArtistImages(finalTracks)
+      }
       
       console.log('✅ Library Analytics Daten erfolgreich geladen')
       console.log('📊 Stats:', libraryStats)
@@ -140,6 +148,31 @@ export default function LibraryPage() {
     }
   }
 
+  const loadArtistImages = async (tracksData: any[]) => {
+    setLoadingArtists(true)
+    try {
+      // Sammle alle einzigartigen Artist-IDs
+      const artistIds = new Set<string>()
+      tracksData.forEach(savedTrack => {
+        savedTrack.track.artists.forEach((artist: any) => {
+          artistIds.add(artist.id)
+        })
+      })
+
+      const uniqueArtistIds = Array.from(artistIds)
+      console.log(`🎤 Lade Bilder für ${uniqueArtistIds.length} einzigartige Artists...`)
+      
+      const artistsMap = await getArtistsWithImages(uniqueArtistIds)
+      setArtistsWithImages(artistsMap)
+      
+      console.log(`✅ Artist-Bilder für ${artistsMap.size} Artists geladen`)
+    } catch (error) {
+      console.error('Fehler beim Laden der Artist-Bilder:', error)
+    } finally {
+      setLoadingArtists(false)
+    }
+  }
+
   if (!session) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-900 via-black to-green-900">
@@ -189,6 +222,12 @@ export default function LibraryPage() {
                 <span className="text-gray-400">Playlists laden:</span>
                 <span className={loadingPlaylists ? 'text-yellow-400' : 'text-green-400'}>
                   {loadingPlaylists ? 'Lädt...' : 'Fertig'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-400">Artist-Bilder laden:</span>
+                <span className={loadingArtists ? 'text-yellow-400' : 'text-green-400'}>
+                  {loadingArtists ? 'Lädt...' : 'Fertig'}
                 </span>
               </div>
             </div>
@@ -280,6 +319,7 @@ export default function LibraryPage() {
                 tracks={tracks}
                 albums={albums}
                 playlists={playlists}
+                artistsWithImages={artistsWithImages}
               />
             )}
           </TabsContent>

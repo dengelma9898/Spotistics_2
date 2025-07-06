@@ -275,6 +275,48 @@ export function analyzeGenreDistribution(tracks: any[]): Array<{genre: string, c
 }
 
 /**
+ * Lädt Artist-Details inklusive Bilder für eine Liste von Artist-IDs
+ */
+export async function getArtistsWithImages(artistIds: string[]): Promise<Map<string, any>> {
+  try {
+    const sdk = await getSpotifyApi()
+    if (!sdk) throw new Error('Spotify API nicht verfügbar')
+
+    const artistMap = new Map()
+    
+    // Spotify API erlaubt max 50 Artists pro Request
+    const chunkSize = 50
+    for (let i = 0; i < artistIds.length; i += chunkSize) {
+      const chunk = artistIds.slice(i, i + chunkSize)
+      
+      console.log(`🎤 Lade Artist-Details für ${chunk.length} Artists...`)
+      
+      const artists = await sdk.artists.get(chunk)
+      
+      artists.forEach(artist => {
+        artistMap.set(artist.id, {
+          id: artist.id,
+          name: artist.name,
+          image: artist.images?.[0]?.url || '/placeholder-artist.png',
+          genres: artist.genres || [],
+          popularity: artist.popularity || 0,
+          followers: artist.followers?.total || 0
+        })
+      })
+      
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    console.log(`✅ Artist-Details für ${artistMap.size} Artists geladen`)
+    return artistMap
+  } catch (error) {
+    console.error('Fehler beim Laden der Artist-Details:', error)
+    return new Map()
+  }
+}
+
+/**
  * Berechnet erweiterte Library-Statistiken
  */
 export function calculateLibraryStats(tracks: any[], albums: any[], playlists: any[]) {
