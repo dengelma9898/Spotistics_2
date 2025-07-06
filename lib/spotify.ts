@@ -95,6 +95,231 @@ export async function isCurrentlyPlaying(trackId: string): Promise<boolean> {
 }
 
 // ==========================================================================
+// LIBRARY ANALYTICS FUNCTIONS
+// ==========================================================================
+
+/**
+ * Holt ALLE gespeicherten Tracks des Users (kann sehr viele sein)
+ */
+export async function getAllSavedTracks(): Promise<any[]> {
+  try {
+    const sdk = await getSpotifyApi()
+    if (!sdk) throw new Error('Spotify API nicht verfügbar')
+
+    let allTracks: any[] = []
+    let offset = 0
+    const limit = 50
+    
+    console.log('🎵 Lade alle gespeicherten Tracks...')
+    
+    while (true) {
+      const response = await sdk.currentUser.tracks.savedTracks(limit, offset)
+      allTracks.push(...response.items)
+      
+      console.log(`📦 Geladen: ${allTracks.length} Tracks`)
+      
+      // Wenn weniger als limit zurückgegeben wird, sind wir am Ende
+      if (response.items.length < limit) break
+      
+      offset += limit
+      
+      // Rate limiting - Spotify erlaubt ~1 Request/Sekunde
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    console.log(`✅ Insgesamt ${allTracks.length} gespeicherte Tracks geladen`)
+    return allTracks
+  } catch (error) {
+    console.error('Fehler beim Laden der gespeicherten Tracks:', error)
+    throw error
+  }
+}
+
+/**
+ * Holt ALLE gespeicherten Alben des Users
+ */
+export async function getAllSavedAlbums(): Promise<any[]> {
+  try {
+    const sdk = await getSpotifyApi()
+    if (!sdk) throw new Error('Spotify API nicht verfügbar')
+
+    let allAlbums: any[] = []
+    let offset = 0
+    const limit = 50
+    
+    console.log('💿 Lade alle gespeicherten Alben...')
+    
+    while (true) {
+      const response = await sdk.currentUser.albums.savedAlbums(limit, offset)
+      allAlbums.push(...response.items)
+      
+      console.log(`📦 Geladen: ${allAlbums.length} Alben`)
+      
+      if (response.items.length < limit) break
+      
+      offset += limit
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    console.log(`✅ Insgesamt ${allAlbums.length} gespeicherte Alben geladen`)
+    return allAlbums
+  } catch (error) {
+    console.error('Fehler beim Laden der gespeicherten Alben:', error)
+    throw error
+  }
+}
+
+/**
+ * Holt ALLE Playlists des Users
+ */
+export async function getAllUserPlaylists(): Promise<any[]> {
+  try {
+    const sdk = await getSpotifyApi()
+    if (!sdk) throw new Error('Spotify API nicht verfügbar')
+
+    let allPlaylists: any[] = []
+    let offset = 0
+    const limit = 50
+    
+    console.log('📋 Lade alle Playlists...')
+    
+    while (true) {
+      const response = await sdk.currentUser.playlists.playlists(limit, offset)
+      allPlaylists.push(...response.items)
+      
+      console.log(`📦 Geladen: ${allPlaylists.length} Playlists`)
+      
+      if (response.items.length < limit) break
+      
+      offset += limit
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
+    
+    console.log(`✅ Insgesamt ${allPlaylists.length} Playlists geladen`)
+    return allPlaylists
+  } catch (error) {
+    console.error('Fehler beim Laden der Playlists:', error)
+    throw error
+  }
+}
+
+/**
+ * Analysiert die Library für Duplikate
+ */
+export function findDuplicateTracks(tracks: any[]): Array<{original: any, duplicate: any}> {
+  const trackMap = new Map()
+  const duplicates: Array<{original: any, duplicate: any}> = []
+  
+  tracks.forEach((savedTrack, index) => {
+    const track = savedTrack.track
+    // Erstelle einen Key basierend auf Track-Name und erstem Artist
+    const key = `${track.name.toLowerCase().trim()}-${track.artists[0]?.name.toLowerCase().trim()}`
+    
+    if (trackMap.has(key)) {
+      duplicates.push({
+        original: trackMap.get(key),
+        duplicate: { ...savedTrack, index }
+      })
+    } else {
+      trackMap.set(key, { ...savedTrack, index })
+    }
+  })
+  
+  return duplicates
+}
+
+/**
+ * Analysiert die zeitliche Entwicklung der Library
+ */
+export function analyzeLibraryGrowth(tracks: any[]): Array<{date: string, count: number}> {
+  const dateMap = new Map()
+  
+  tracks.forEach(savedTrack => {
+    const addedDate = new Date(savedTrack.added_at).toISOString().split('T')[0]
+    dateMap.set(addedDate, (dateMap.get(addedDate) || 0) + 1)
+  })
+  
+  // Sortiere nach Datum
+  const sortedDates = Array.from(dateMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+  
+  // Berechne kumulative Summe
+  let cumulativeCount = 0
+  return sortedDates.map(([date, count]) => {
+    cumulativeCount += count
+    return { date, count: cumulativeCount }
+  })
+}
+
+/**
+ * Analysiert Genre-Verteilung basierend auf Artist-Genres
+ */
+export function analyzeGenreDistribution(tracks: any[]): Array<{genre: string, count: number}> {
+  const genreMap = new Map()
+  
+  tracks.forEach(savedTrack => {
+    const track = savedTrack.track
+    track.artists.forEach((artist: any) => {
+      if (artist.genres && Array.isArray(artist.genres)) {
+        artist.genres.forEach((genre: string) => {
+          genreMap.set(genre, (genreMap.get(genre) || 0) + 1)
+        })
+      }
+    })
+  })
+  
+  return Array.from(genreMap.entries())
+    .map(([genre, count]) => ({ genre, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20) // Top 20 Genres
+}
+
+/**
+ * Berechnet erweiterte Library-Statistiken
+ */
+export function calculateLibraryStats(tracks: any[], albums: any[], playlists: any[]) {
+  const now = new Date()
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+  
+  const recentTracks = tracks.filter(t => new Date(t.added_at) > oneMonthAgo)
+  const yearlyTracks = tracks.filter(t => new Date(t.added_at) > oneYearAgo)
+  
+  const totalDuration = tracks.reduce((sum, t) => sum + (t.track?.duration_ms || 0), 0)
+  const avgPopularity = tracks.length > 0 
+    ? tracks.reduce((sum, t) => sum + (t.track?.popularity || 0), 0) / tracks.length 
+    : 0
+  
+  const uniqueArtists = new Set(
+    tracks.flatMap(t => t.track?.artists?.map((a: any) => a.id) || [])
+  ).size
+  
+  const duplicates = findDuplicateTracks(tracks)
+  
+  return {
+    totalTracks: tracks.length,
+    totalAlbums: albums.length,
+    totalPlaylists: playlists.length,
+    recentTracks: recentTracks.length,
+    yearlyTracks: yearlyTracks.length,
+    uniqueArtists,
+    totalDurationHours: Math.round(totalDuration / 1000 / 60 / 60),
+    avgPopularity: Math.round(avgPopularity),
+    duplicatesCount: duplicates.length,
+    oldestTrack: tracks.length > 0 
+      ? tracks.reduce((oldest, current) => 
+          new Date(current.added_at) < new Date(oldest.added_at) ? current : oldest
+        )
+      : null,
+    newestTrack: tracks.length > 0
+      ? tracks.reduce((newest, current) =>
+          new Date(current.added_at) > new Date(newest.added_at) ? current : newest
+        )
+      : null
+  }
+}
+
+// ==========================================================================
 // UTILITY FUNCTIONS - Behalten wir für UI-Spezifische Formatierung
 // ==========================================================================
 
