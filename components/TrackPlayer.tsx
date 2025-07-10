@@ -34,19 +34,34 @@ export function TrackPlayer({ track, rank, isPremium = false, selectedDeviceId }
 
   // Check if currently playing via Spotify (nur für Premium)
   useEffect(() => {
-    if (isPremium) {
-      const checkPlayingStatus = async () => {
-        try {
-          const playing = await isCurrentlyPlaying(track.id)
+    if (!isPremium) return
+
+    let cancelled = false
+    const checkPlayingStatus = async () => {
+      try {
+        if (cancelled) return // Prevent state updates after cleanup
+        const playing = await isCurrentlyPlaying(track.id)
+        if (!cancelled) {
           setIsPlaying(playing)
-        } catch (error) {
-          // Ignoriere Fehler bei Status-Check
         }
+      } catch (error) {
+        // Ignoriere Fehler bei Status-Check
       }
-      
-      checkPlayingStatus()
-      const interval = setInterval(checkPlayingStatus, 5000) // Check alle 5 Sekunden
-      return () => clearInterval(interval)
+    }
+    
+    // Initial check
+    checkPlayingStatus()
+    
+    // Set up interval with proper cleanup
+    const interval = setInterval(() => {
+      if (!cancelled) {
+        checkPlayingStatus()
+      }
+    }, 5000)
+    
+    return () => {
+      cancelled = true
+      clearInterval(interval)
     }
   }, [isPremium, track.id])
 

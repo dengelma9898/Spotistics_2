@@ -9,8 +9,11 @@ interface SpotifySession extends Session {
   tokenExpires?: number
 }
 
-// Globale SDK-Instanz
+// Globale SDK-Instanz mit cached token tracking
 let spotifyApiInstance: SpotifyApi | null = null
+let cachedAccessToken: string | null = null
+let instanceCreatedAt: number = 0
+const INSTANCE_CACHE_DURATION = 3000 * 1000 // 50 minutes (tokens expire in 1 hour)
 
 // ==========================================================================
 // SPOTIFY SDK INITIALIZATION - Direkte SDK-Nutzung
@@ -19,6 +22,7 @@ let spotifyApiInstance: SpotifyApi | null = null
 /**
  * Erstellt oder gibt die Spotify API SDK-Instanz zurück
  * Verwendet das offizielle SDK direkt ohne Wrapper
+ * Includes proper token validation and cache invalidation
  */
 export async function getSpotifyApi(): Promise<SpotifyApi | null> {
   try {
@@ -26,11 +30,18 @@ export async function getSpotifyApi(): Promise<SpotifyApi | null> {
     
     if (!session?.accessToken) {
       console.warn('Keine Spotify-Authentifizierung verfügbar')
+      // Clear cached instance if no session
+      spotifyApiInstance = null
+      cachedAccessToken = null
       return null
     }
 
-    // Erstelle neue SDK-Instanz wenn nötig
-    if (!spotifyApiInstance) {
+    const currentTime = Date.now()
+    const isInstanceExpired = instanceCreatedAt && (currentTime - instanceCreatedAt) > INSTANCE_CACHE_DURATION
+    const isTokenChanged = cachedAccessToken !== session.accessToken
+
+    // Create new SDK instance if needed or if token/expiration changes
+    if (!spotifyApiInstance || isTokenChanged || isInstanceExpired) {
       const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID
       if (!clientId) {
         console.error('NEXT_PUBLIC_SPOTIFY_CLIENT_ID ist nicht gesetzt')
@@ -44,22 +55,40 @@ export async function getSpotifyApi(): Promise<SpotifyApi | null> {
         refresh_token: session.refreshToken || ''
       }
 
-      // Verwende das offizielle SDK direkt
+      // Clear old instance first
+      spotifyApiInstance = null
+      
+      // Create new instance with current token
       spotifyApiInstance = SpotifyApi.withAccessToken(clientId, accessToken)
+      cachedAccessToken = session.accessToken
+      instanceCreatedAt = currentTime
+      
+      if (isTokenChanged) {
+        console.log('🔄 Spotify API instance refreshed due to token change')
+      } else if (isInstanceExpired) {
+        console.log('🔄 Spotify API instance refreshed due to expiration')
+      }
     }
 
     return spotifyApiInstance
   } catch (error) {
     console.error('Fehler beim Initialisieren der Spotify API:', error)
+    // Clear cache on error to force recreation on next call
+    spotifyApiInstance = null
+    cachedAccessToken = null
     return null
   }
 }
 
 /**
  * Erneuert die SDK-Instanz (bei Token-Refresh)
+ * Clears all cached state to ensure fresh authentication
  */
 export function refreshSpotifyApi(): void {
   spotifyApiInstance = null
+  cachedAccessToken = null
+  instanceCreatedAt = 0
+  console.log('🔄 Spotify API cache manually cleared')
 }
 
 /**

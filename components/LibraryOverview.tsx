@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
@@ -27,61 +28,78 @@ interface LibraryOverviewProps {
 }
 
 export function LibraryOverview({ stats, tracks, albums, playlists, artistsWithImages }: LibraryOverviewProps) {
-  // Berechne Top Artists basierend auf Track-Anzahl
-  const artistCounts = new Map()
-  tracks.forEach(savedTrack => {
-    savedTrack.track.artists.forEach((artist: any) => {
-      const existing = artistCounts.get(artist.id)
-      const artistWithImage = artistsWithImages.get(artist.id)
-      
-      artistCounts.set(artist.id, {
-        name: artist.name,
-        count: (existing?.count || 0) + 1,
-        // Nutze das geladene Bild oder Fallback
-        image: artistWithImage?.image || '/placeholder-artist.png',
-        id: artist.id,
-        popularity: artistWithImage?.popularity || 0,
-        followers: artistWithImage?.followers || 0,
-        genres: artistWithImage?.genres || []
+  // Memoize expensive computations to prevent recalculation on every render
+  const { topArtists, topAlbums, activityMetrics } = useMemo(() => {
+    // Berechne Top Artists basierend auf Track-Anzahl
+    const artistCounts = new Map()
+    tracks.forEach(savedTrack => {
+      savedTrack.track.artists.forEach((artist: any) => {
+        const existing = artistCounts.get(artist.id)
+        const artistWithImage = artistsWithImages.get(artist.id)
+        
+        artistCounts.set(artist.id, {
+          name: artist.name,
+          count: (existing?.count || 0) + 1,
+          // Nutze das geladene Bild oder Fallback
+          image: artistWithImage?.image || '/placeholder-artist.png',
+          id: artist.id,
+          popularity: artistWithImage?.popularity || 0,
+          followers: artistWithImage?.followers || 0,
+          genres: artistWithImage?.genres || []
+        })
       })
     })
-  })
-  
-  const topArtists = Array.from(artistCounts.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+    
+    const computedTopArtists = Array.from(artistCounts.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
 
-  // Berechne Top Alben basierend auf Track-Anzahl
-  const albumCounts = new Map()
-  tracks.forEach(savedTrack => {
-    const album = savedTrack.track.album
-    albumCounts.set(album.id, {
-      name: album.name,
-      artist: album.artists[0]?.name || 'Unknown',
-      count: (albumCounts.get(album.id)?.count || 0) + 1,
-      image: album.images?.[0]?.url || '/placeholder-album.png'
+    // Berechne Top Alben basierend auf Track-Anzahl
+    const albumCounts = new Map()
+    tracks.forEach(savedTrack => {
+      const album = savedTrack.track.album
+      albumCounts.set(album.id, {
+        name: album.name,
+        artist: album.artists[0]?.name || 'Unknown',
+        count: (albumCounts.get(album.id)?.count || 0) + 1,
+        image: album.images?.[0]?.url || '/placeholder-album.png'
+      })
     })
-  })
-  
-  const topAlbums = Array.from(albumCounts.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+    
+    const computedTopAlbums = Array.from(albumCounts.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
 
-  // Berechne Aktivitäts-Trends
-  const now = new Date()
-  const thisMonth = tracks.filter(t => {
-    const addedDate = new Date(t.added_at)
-    return addedDate.getMonth() === now.getMonth() && addedDate.getFullYear() === now.getFullYear()
-  }).length
+    // Berechne Aktivitäts-Trends - cache current time to avoid inconsistencies
+    const now = new Date()
+    const thisMonth = tracks.filter(t => {
+      const addedDate = new Date(t.added_at)
+      return addedDate.getMonth() === now.getMonth() && addedDate.getFullYear() === now.getFullYear()
+    }).length
 
-  const lastMonth = tracks.filter(t => {
-    const addedDate = new Date(t.added_at)
-    const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    return addedDate.getMonth() === lastMonthDate.getMonth() && addedDate.getFullYear() === lastMonthDate.getFullYear()
-  }).length
+    const lastMonth = tracks.filter(t => {
+      const addedDate = new Date(t.added_at)
+      const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+      return addedDate.getMonth() === lastMonthDate.getMonth() && addedDate.getFullYear() === lastMonthDate.getFullYear()
+    }).length
 
-  const activityTrend = thisMonth - lastMonth
-  const activityTrendPercent = lastMonth > 0 ? Math.round((activityTrend / lastMonth) * 100) : 0
+    const activityTrend = thisMonth - lastMonth
+    const activityTrendPercent = lastMonth > 0 ? Math.round((activityTrend / lastMonth) * 100) : 0
+
+    return {
+      topArtists: computedTopArtists,
+      topAlbums: computedTopAlbums,
+      activityMetrics: {
+        thisMonth,
+        lastMonth,
+        activityTrend,
+        activityTrendPercent
+      }
+    }
+  }, [tracks, artistsWithImages])
+
+  // Extract activity metrics for cleaner code
+  const { thisMonth, lastMonth, activityTrend, activityTrendPercent } = activityMetrics
 
   return (
     <div className="space-y-6">
